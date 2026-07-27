@@ -46,6 +46,7 @@ const visualThemes = [
   { id: "moldura", name: "Moldura floral" },
   { id: "campo", name: "Campo de flores" },
   { id: "florescer", name: "Florescer mágico" },
+  { id: "natural", name: "Jardim natural" },
 ] as const;
 
 const galleryPhotos = [
@@ -113,20 +114,24 @@ function BotanicalElement({ item, index }: { item: Botanical; index: number }) {
   );
 }
 
+function EditorialPhoto({ index, className = "" }: { index: number; className?: string }) {
+  const photo = galleryPhotos[index];
+  return (
+    <figure className={`editorial-photo ${className}`}>
+      <img src={photo.src} alt={photo.alt} loading="lazy" decoding="async" />
+      <figcaption><span>{photo.label}</span><i>{String(index + 1).padStart(2, "0")}</i></figcaption>
+    </figure>
+  );
+}
+
 export default function Home() {
   const [leaving, setLeaving] = useState(false);
   const [themeIndex, setThemeIndex] = useState(0);
   const [bloomProgress, setBloomProgress] = useState(0);
-  const [galleryIndex, setGalleryIndex] = useState(0);
-  const [previousGalleryIndex, setPreviousGalleryIndex] = useState<number | null>(null);
-  const [galleryDirection, setGalleryDirection] = useState<1 | -1>(1);
   const heroRef = useRef<HTMLElement>(null);
   const frameRef = useRef<number | null>(null);
   const bloomRef = useRef(0);
   const dragRef = useRef<{ y: number; progress: number; pointerId: number } | null>(null);
-  const galleryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const gallerySwipeRef = useRef<{ x: number; pointerId: number } | null>(null);
-  const galleryThumbsRef = useRef<HTMLDivElement>(null);
   const theme = visualThemes[themeIndex];
   const isBloom = theme.id === "florescer";
 
@@ -143,13 +148,7 @@ export default function Home() {
 
   useEffect(() => () => {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
-    if (galleryTimerRef.current) clearTimeout(galleryTimerRef.current);
   }, []);
-
-  useEffect(() => {
-    const activeThumb = galleryThumbsRef.current?.querySelector<HTMLElement>(`[data-gallery-thumb="${galleryIndex}"]`);
-    activeThumb?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-  }, [galleryIndex]);
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -207,32 +206,6 @@ export default function Home() {
     if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
   };
 
-  const showGalleryImage = (nextIndex: number, direction: 1 | -1) => {
-    if (nextIndex === galleryIndex) return;
-    setPreviousGalleryIndex(galleryIndex);
-    setGalleryDirection(direction);
-    setGalleryIndex(nextIndex);
-    if (galleryTimerRef.current) clearTimeout(galleryTimerRef.current);
-    galleryTimerRef.current = setTimeout(() => setPreviousGalleryIndex(null), 950);
-  };
-
-  const stepGallery = (step: 1 | -1) => {
-    const next = (galleryIndex + step + galleryPhotos.length) % galleryPhotos.length;
-    showGalleryImage(next, step);
-  };
-
-  const handleGallerySwipeStart = (event: React.PointerEvent<HTMLDivElement>) => {
-    gallerySwipeRef.current = { x: event.clientX, pointerId: event.pointerId };
-  };
-
-  const handleGallerySwipeEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    const swipe = gallerySwipeRef.current;
-    if (!swipe || swipe.pointerId !== event.pointerId) return;
-    const distance = event.clientX - swipe.x;
-    gallerySwipeRef.current = null;
-    if (Math.abs(distance) > 45) stepGallery(distance < 0 ? 1 : -1);
-  };
-
   return (
     <main>
       <section
@@ -251,6 +224,7 @@ export default function Home() {
           <div className="background-gallery__image background-gallery__image--moldura" />
           <div className="background-gallery__image background-gallery__image--campo" />
           <div className="background-gallery__image background-gallery__image--florescer" />
+          <div className="background-gallery__image background-gallery__image--natural" />
         </div>
         <div className="magic-dust" aria-hidden="true">
           {Array.from({ length: 14 }).map((_, sparkle) => (
@@ -273,7 +247,7 @@ export default function Home() {
             <small>Trocar cenário</small>
             <strong aria-live="polite">{theme.name}</strong>
           </span>
-          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 05</span>
+          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 06</span>
         </button>
 
         <div className="hero__center">
@@ -306,80 +280,69 @@ export default function Home() {
         <button type="button" onClick={() => document.querySelector("#momentos")?.scrollIntoView({ behavior: "smooth" })}>Conheça nossas histórias ↓</button>
       </section>
 
-      <section
-        id="momentos"
-        className="gallery-section"
-        aria-labelledby="gallery-title"
-        tabIndex={0}
-        onKeyDown={(event) => {
-          if (event.key === "ArrowRight") stepGallery(1);
-          if (event.key === "ArrowLeft") stepGallery(-1);
-        }}
-      >
-        <header className="gallery-header">
+      <section id="momentos" className="editorial-section" aria-labelledby="editorial-title">
+        <header className="editorial-header">
+          <p><span /> La Casa por dentro</p>
           <div>
-            <p><span /> La Casa por dentro</p>
-            <h2 id="gallery-title">Histórias<br /><em>vividas aqui</em></h2>
+            <h2 id="editorial-title">Histórias<br /><em>vividas aqui</em></h2>
+            <p>Festas, encontros e detalhes que transformam cada noite em uma memória particular.</p>
           </div>
-          <p className="gallery-header__note">Festas, encontros e detalhes que transformam cada noite em uma memória particular.</p>
         </header>
 
-        <div
-          className="gallery-stage"
-          onPointerDown={handleGallerySwipeStart}
-          onPointerUp={handleGallerySwipeEnd}
-          onPointerCancel={() => { gallerySwipeRef.current = null; }}
-        >
-          <div
-            key={`backdrop-${galleryIndex}`}
-            className="gallery-stage__backdrop"
-            style={{ backgroundImage: `url(${galleryPhotos[galleryIndex].src})` }}
-            aria-hidden="true"
-          />
-          {previousGalleryIndex !== null && (
-            <img
-              className={`gallery-photo gallery-photo--outgoing gallery-photo--direction-${galleryDirection > 0 ? "next" : "previous"}`}
-              src={galleryPhotos[previousGalleryIndex].src}
-              alt=""
-              aria-hidden="true"
-            />
-          )}
-          <img
-            key={`photo-${galleryIndex}`}
-            className={`gallery-photo gallery-photo--active gallery-photo--direction-${galleryDirection > 0 ? "next" : "previous"}`}
-            src={galleryPhotos[galleryIndex].src}
-            alt={galleryPhotos[galleryIndex].alt}
-            loading={galleryIndex < 2 ? "eager" : "lazy"}
-            decoding="async"
-            draggable={false}
-          />
-          <button className="gallery-stage__advance" type="button" onClick={() => stepGallery(1)} aria-label="Ver próxima fotografia" />
-          <div className="gallery-stage__caption" aria-live="polite">
-            <span>{galleryPhotos[galleryIndex].label}</span>
-            <p>{String(galleryIndex + 1).padStart(2, "0")} <i /> {String(galleryPhotos.length).padStart(2, "0")}</p>
+        <EditorialPhoto index={17} className="editorial-photo--venue" />
+
+        <div className="editorial-spread editorial-spread--opening">
+          <EditorialPhoto index={0} />
+          <div className="editorial-spread__aside">
+            <p>Uma casa feita para celebrar o que é único.</p>
+            <EditorialPhoto index={1} />
           </div>
         </div>
 
-        <div className="gallery-controls">
-          <div className="gallery-arrows">
-            <button type="button" onClick={() => stepGallery(-1)} aria-label="Fotografia anterior">←</button>
-            <button type="button" onClick={() => stepGallery(1)} aria-label="Próxima fotografia">→</button>
+        <EditorialPhoto index={3} className="editorial-photo--panorama" />
+
+        <div className="editorial-spread editorial-spread--details">
+          <EditorialPhoto index={4} />
+          <EditorialPhoto index={5} />
+        </div>
+
+        <div className="editorial-statement">
+          <p>Flores, luz e movimento</p>
+          <h3>Cada detalhe compõe<br />uma <em>atmosfera.</em></h3>
+        </div>
+
+        <div className="editorial-triptych">
+          <EditorialPhoto index={6} />
+          <EditorialPhoto index={7} />
+          <EditorialPhoto index={8} />
+        </div>
+
+        <EditorialPhoto index={2} className="editorial-photo--cinema" />
+
+        <div className="editorial-spread editorial-spread--portraits">
+          <EditorialPhoto index={9} />
+          <EditorialPhoto index={11} />
+          <EditorialPhoto index={12} />
+        </div>
+
+        <div className="editorial-spread editorial-spread--quiet">
+          <EditorialPhoto index={14} />
+          <div className="editorial-spread__aside">
+            <blockquote>“Um lugar onde cada história encontra seu próprio cenário.”</blockquote>
+            <EditorialPhoto index={15} />
           </div>
-          <div className="gallery-thumbs" ref={galleryThumbsRef} aria-label="Escolher fotografia">
-            {galleryPhotos.map((photo, index) => (
-              <button
-                key={photo.src}
-                type="button"
-                className={index === galleryIndex ? "is-active" : ""}
-                data-gallery-thumb={index}
-                onClick={() => showGalleryImage(index, index > galleryIndex ? 1 : -1)}
-                aria-label={`Ver fotografia ${index + 1}: ${photo.label}`}
-                aria-current={index === galleryIndex ? "true" : undefined}
-              >
-                <img src={photo.src} alt="" loading="lazy" decoding="async" />
-              </button>
-            ))}
-          </div>
+        </div>
+
+        <div className="editorial-night">
+          <header><span>Noite</span><h3>Quando a casa<br /><em>ganha outra luz</em></h3></header>
+          <EditorialPhoto index={10} />
+          <EditorialPhoto index={13} />
+        </div>
+
+        <div className="editorial-finale">
+          <EditorialPhoto index={16} />
+          <EditorialPhoto index={18} />
+          <p>Memórias para levar<br />muito além da festa.</p>
         </div>
       </section>
     </main>
