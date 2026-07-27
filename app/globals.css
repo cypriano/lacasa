@@ -58,6 +58,40 @@ button { font: inherit; }
   pointer-events: none;
 }
 
+.background-gallery,
+.background-gallery__image {
+  position: absolute;
+  inset: 0;
+}
+
+.background-gallery { z-index: 1; }
+
+.background-gallery__image {
+  opacity: 0;
+  background-position: center;
+  background-size: cover;
+  transform: scale(1.035);
+  transition: opacity .85s ease, transform 1.3s cubic-bezier(.2,.8,.2,1);
+}
+
+.background-gallery__image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 46%, rgba(249,247,241,.74) 0 10%, rgba(249,247,241,.3) 27%, transparent 52%);
+}
+
+.background-gallery__image--herbario { background-image: url("/floral-herbario.webp"); }
+.background-gallery__image--moldura { background-image: url("/floral-moldura.webp"); }
+.background-gallery__image--campo { background-image: url("/floral-campo.webp"); background-position: center 58%; }
+
+.hero--theme-herbario .background-gallery__image--herbario,
+.hero--theme-moldura .background-gallery__image--moldura,
+.hero--theme-campo .background-gallery__image--campo { opacity: 1; transform: scale(1); }
+
+.hero:not(.hero--theme-original) .botanical-field { opacity: 0; transform: scale(.94); }
+.hero:not(.hero--theme-original) .paper-grain { z-index: 2; }
+
 .hero__center {
   position: relative;
   z-index: 5;
@@ -142,6 +176,55 @@ h1 {
 .enter-button:hover i,
 .enter-button:focus-visible i { background: var(--rose-dark); transform: rotate(-45deg); }
 .enter-button:active { transform: translateY(0) scale(.98); }
+
+.theme-switcher {
+  position: absolute;
+  z-index: 8;
+  top: 35px;
+  right: 38px;
+  display: grid;
+  grid-template-columns: 32px auto auto;
+  align-items: center;
+  gap: 11px;
+  min-width: 238px;
+  padding: 8px 10px;
+  border: 1px solid rgba(50,45,41,.22);
+  border-radius: 999px;
+  background: rgba(250,248,242,.7);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 8px 28px rgba(59,50,42,.08);
+  backdrop-filter: blur(12px);
+  transition: background .3s ease, border-color .3s ease, transform .3s ease, box-shadow .3s ease;
+}
+
+.theme-switcher:hover,
+.theme-switcher:focus-visible {
+  border-color: rgba(50,45,41,.46);
+  background: rgba(255,253,248,.92);
+  box-shadow: 0 11px 32px rgba(59,50,42,.14);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.theme-switcher__icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sage-dark);
+  color: var(--ivory);
+  font-size: 11px;
+  transition: transform .55s ease;
+}
+
+.theme-switcher:hover .theme-switcher__icon { transform: rotate(135deg); }
+.theme-switcher__copy { display: grid; gap: 3px; }
+.theme-switcher__copy small { color: var(--muted); font-size: 7px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+.theme-switcher__copy strong { min-width: 94px; font-family: Didot, "Bodoni 72", Georgia, serif; font-size: 13px; font-weight: 400; }
+.theme-switcher__count { padding-right: 7px; color: var(--muted); font-size: 8px; letter-spacing: .09em; }
 
 .edition, .scroll-hint {
   position: absolute;
@@ -250,6 +333,12 @@ h1 {
   .subtitle { margin-top:29px; font-size:12px; letter-spacing:.09em; }
   .botanical { --size-mobile: calc(var(--size) * .78); width:var(--size-mobile); height:var(--size-mobile); }
   .botanical:not(.botanical--mobile):nth-child(3n) { display:none; }
+  .background-gallery__image { background-position: center; }
+  .background-gallery__image--campo { background-position: center bottom; }
+  .background-gallery__image::after { background: radial-gradient(ellipse at 50% 44%, rgba(249,247,241,.8) 0 12%, rgba(249,247,241,.4) 31%, transparent 60%); }
+  .theme-switcher { top: 24px; right: 50%; grid-template-columns: 29px auto auto; min-width: 218px; padding: 6px 8px; transform: translateX(50%); }
+  .theme-switcher:hover, .theme-switcher:focus-visible { transform: translateX(50%) translateY(-2px); }
+  .theme-switcher__icon { width: 29px; height: 29px; }
   .edition { left:24px; bottom:23px; }
   .scroll-hint { right:22px; bottom:23px; }
 }

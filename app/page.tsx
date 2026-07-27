@@ -40,6 +40,13 @@ const botanicals: Botanical[] = [
   { kind: "bud", x: 91, y: 29, size: 25, rotation: 14, depth: 0.5, tone: "rose", mobile: true },
 ];
 
+const visualThemes = [
+  { id: "original", name: "Jardim suspenso" },
+  { id: "herbario", name: "Herbário" },
+  { id: "moldura", name: "Moldura floral" },
+  { id: "campo", name: "Campo de flores" },
+] as const;
+
 function BotanicalElement({ item, index }: { item: Botanical; index: number }) {
   const style = {
     "--x": `${item.x}%`,
@@ -85,8 +92,10 @@ function BotanicalElement({ item, index }: { item: Botanical; index: number }) {
 
 export default function Home() {
   const [leaving, setLeaving] = useState(false);
+  const [themeIndex, setThemeIndex] = useState(0);
   const heroRef = useRef<HTMLElement>(null);
   const frameRef = useRef<number | null>(null);
+  const theme = visualThemes[themeIndex];
 
   const moveGarden = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch" || !heroRef.current) return;
@@ -112,20 +121,38 @@ export default function Home() {
     }, 520);
   };
 
+  const cycleTheme = () => {
+    setThemeIndex((current) => (current + 1) % visualThemes.length);
+  };
+
   return (
     <main>
       <section
         ref={heroRef}
-        className={`hero${leaving ? " hero--leaving" : ""}`}
+        className={`hero hero--theme-${theme.id}${leaving ? " hero--leaving" : ""}`}
         onPointerMove={moveGarden}
         aria-labelledby="la-casa-title"
       >
         <div className="paper-grain" aria-hidden="true" />
+        <div className="background-gallery" aria-hidden="true">
+          <div className="background-gallery__image background-gallery__image--herbario" />
+          <div className="background-gallery__image background-gallery__image--moldura" />
+          <div className="background-gallery__image background-gallery__image--campo" />
+        </div>
         <div className="botanical-field" aria-hidden="true">
           {botanicals.map((item, index) => (
             <BotanicalElement item={item} index={index} key={`${item.kind}-${index}`} />
           ))}
         </div>
+
+        <button className="theme-switcher" type="button" onClick={cycleTheme} aria-label={`Mudar cenário. Atual: ${theme.name}`}>
+          <span className="theme-switcher__icon" aria-hidden="true">✦</span>
+          <span className="theme-switcher__copy">
+            <small>Trocar cenário</small>
+            <strong aria-live="polite">{theme.name}</strong>
+          </span>
+          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 04</span>
+        </button>
 
         <div className="hero__center">
           <p className="eyebrow"><span /> Um lugar para sentir <span /></p>
