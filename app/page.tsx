@@ -48,6 +48,28 @@ const visualThemes = [
   { id: "florescer", name: "Florescer mágico" },
 ] as const;
 
+const galleryPhotos = [
+  { src: "/gallery/01.webp", label: "Casamentos", alt: "Casal em meio a uma instalação floral iluminada" },
+  { src: "/gallery/02.webp", label: "A festa", alt: "Casal dançando sob luzes coloridas" },
+  { src: "/gallery/03.webp", label: "Cerimônias", alt: "Casal cercado por um arco de flores brancas" },
+  { src: "/gallery/04.webp", label: "Cenografia", alt: "Mesa de celebração com flores intensas e globos espelhados" },
+  { src: "/gallery/05.webp", label: "Detalhes", alt: "Bolo de casamento decorado com rosas vermelhas" },
+  { src: "/gallery/06.webp", label: "Detalhes", alt: "Bolo branco entre flores e luzes suspensas" },
+  { src: "/gallery/07.webp", label: "Celebrações", alt: "Debutante em vestido bordado junto à decoração floral" },
+  { src: "/gallery/08.webp", label: "Celebrações", alt: "Debutante sorrindo diante de uma parede de flores" },
+  { src: "/gallery/09.webp", label: "Detalhes", alt: "Bolo de quinze anos suspenso sobre cristais" },
+  { src: "/gallery/10.webp", label: "Casamentos", alt: "Retrato de noiva diante de flores brancas" },
+  { src: "/gallery/11.webp", label: "Noite", alt: "Casal na entrada floral da La Casa à noite" },
+  { src: "/gallery/12.webp", label: "Casamentos", alt: "Noiva com buquê branco em cenário floral" },
+  { src: "/gallery/13.webp", label: "Casamentos", alt: "Casal sorrindo diante da mesa do casamento" },
+  { src: "/gallery/14.webp", label: "A festa", alt: "Casal dançando em frente ao palco" },
+  { src: "/gallery/15.webp", label: "Casamentos", alt: "Noiva ao lado do bolo sob luzes quentes" },
+  { src: "/gallery/16.webp", label: "Casamentos", alt: "Noiva em retrato frontal no salão" },
+  { src: "/gallery/17.webp", label: "Memórias", alt: "Retrato em preto e branco de noiva com buquê" },
+  { src: "/gallery/18.webp", label: "O espaço", alt: "Jardim, fonte e arquitetura externa da La Casa" },
+  { src: "/gallery/19.webp", label: "Memórias", alt: "Casal dentro do carro após a celebração" },
+] as const;
+
 function BotanicalElement({ item, index }: { item: Botanical; index: number }) {
   const style = {
     "--x": `${item.x}%`,
@@ -95,10 +117,16 @@ export default function Home() {
   const [leaving, setLeaving] = useState(false);
   const [themeIndex, setThemeIndex] = useState(0);
   const [bloomProgress, setBloomProgress] = useState(0);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [previousGalleryIndex, setPreviousGalleryIndex] = useState<number | null>(null);
+  const [galleryDirection, setGalleryDirection] = useState<1 | -1>(1);
   const heroRef = useRef<HTMLElement>(null);
   const frameRef = useRef<number | null>(null);
   const bloomRef = useRef(0);
   const dragRef = useRef<{ y: number; progress: number; pointerId: number } | null>(null);
+  const galleryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gallerySwipeRef = useRef<{ x: number; pointerId: number } | null>(null);
+  const galleryThumbsRef = useRef<HTMLDivElement>(null);
   const theme = visualThemes[themeIndex];
   const isBloom = theme.id === "florescer";
 
@@ -115,7 +143,13 @@ export default function Home() {
 
   useEffect(() => () => {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    if (galleryTimerRef.current) clearTimeout(galleryTimerRef.current);
   }, []);
+
+  useEffect(() => {
+    const activeThumb = galleryThumbsRef.current?.querySelector<HTMLElement>(`[data-gallery-thumb="${galleryIndex}"]`);
+    activeThumb?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [galleryIndex]);
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -171,6 +205,32 @@ export default function Home() {
 
   const handlePointerEnd = (event: React.PointerEvent<HTMLElement>) => {
     if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+  };
+
+  const showGalleryImage = (nextIndex: number, direction: 1 | -1) => {
+    if (nextIndex === galleryIndex) return;
+    setPreviousGalleryIndex(galleryIndex);
+    setGalleryDirection(direction);
+    setGalleryIndex(nextIndex);
+    if (galleryTimerRef.current) clearTimeout(galleryTimerRef.current);
+    galleryTimerRef.current = setTimeout(() => setPreviousGalleryIndex(null), 950);
+  };
+
+  const stepGallery = (step: 1 | -1) => {
+    const next = (galleryIndex + step + galleryPhotos.length) % galleryPhotos.length;
+    showGalleryImage(next, step);
+  };
+
+  const handleGallerySwipeStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    gallerySwipeRef.current = { x: event.clientX, pointerId: event.pointerId };
+  };
+
+  const handleGallerySwipeEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    const swipe = gallerySwipeRef.current;
+    if (!swipe || swipe.pointerId !== event.pointerId) return;
+    const distance = event.clientX - swipe.x;
+    gallerySwipeRef.current = null;
+    if (Math.abs(distance) > 45) stepGallery(distance < 0 ? 1 : -1);
   };
 
   return (
@@ -242,8 +302,85 @@ export default function Home() {
         <div className="next-section__ornament" aria-hidden="true"><i /><span /><i /></div>
         <p>O começo de uma história</p>
         <h2 id="next-title">Bem-vindo à<br /><em>La Casa</em></h2>
-        <p className="next-section__note">Nossa próxima página está florescendo.</p>
-        <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Voltar ao jardim ↑</button>
+        <p className="next-section__note">Cada celebração encontra aqui um jeito único de florescer.</p>
+        <button type="button" onClick={() => document.querySelector("#momentos")?.scrollIntoView({ behavior: "smooth" })}>Conheça nossas histórias ↓</button>
+      </section>
+
+      <section
+        id="momentos"
+        className="gallery-section"
+        aria-labelledby="gallery-title"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowRight") stepGallery(1);
+          if (event.key === "ArrowLeft") stepGallery(-1);
+        }}
+      >
+        <header className="gallery-header">
+          <div>
+            <p><span /> La Casa por dentro</p>
+            <h2 id="gallery-title">Histórias<br /><em>vividas aqui</em></h2>
+          </div>
+          <p className="gallery-header__note">Festas, encontros e detalhes que transformam cada noite em uma memória particular.</p>
+        </header>
+
+        <div
+          className="gallery-stage"
+          onPointerDown={handleGallerySwipeStart}
+          onPointerUp={handleGallerySwipeEnd}
+          onPointerCancel={() => { gallerySwipeRef.current = null; }}
+        >
+          <div
+            key={`backdrop-${galleryIndex}`}
+            className="gallery-stage__backdrop"
+            style={{ backgroundImage: `url(${galleryPhotos[galleryIndex].src})` }}
+            aria-hidden="true"
+          />
+          {previousGalleryIndex !== null && (
+            <img
+              className={`gallery-photo gallery-photo--outgoing gallery-photo--direction-${galleryDirection > 0 ? "next" : "previous"}`}
+              src={galleryPhotos[previousGalleryIndex].src}
+              alt=""
+              aria-hidden="true"
+            />
+          )}
+          <img
+            key={`photo-${galleryIndex}`}
+            className={`gallery-photo gallery-photo--active gallery-photo--direction-${galleryDirection > 0 ? "next" : "previous"}`}
+            src={galleryPhotos[galleryIndex].src}
+            alt={galleryPhotos[galleryIndex].alt}
+            loading={galleryIndex < 2 ? "eager" : "lazy"}
+            decoding="async"
+            draggable={false}
+          />
+          <button className="gallery-stage__advance" type="button" onClick={() => stepGallery(1)} aria-label="Ver próxima fotografia" />
+          <div className="gallery-stage__caption" aria-live="polite">
+            <span>{galleryPhotos[galleryIndex].label}</span>
+            <p>{String(galleryIndex + 1).padStart(2, "0")} <i /> {String(galleryPhotos.length).padStart(2, "0")}</p>
+          </div>
+        </div>
+
+        <div className="gallery-controls">
+          <div className="gallery-arrows">
+            <button type="button" onClick={() => stepGallery(-1)} aria-label="Fotografia anterior">←</button>
+            <button type="button" onClick={() => stepGallery(1)} aria-label="Próxima fotografia">→</button>
+          </div>
+          <div className="gallery-thumbs" ref={galleryThumbsRef} aria-label="Escolher fotografia">
+            {galleryPhotos.map((photo, index) => (
+              <button
+                key={photo.src}
+                type="button"
+                className={index === galleryIndex ? "is-active" : ""}
+                data-gallery-thumb={index}
+                onClick={() => showGalleryImage(index, index > galleryIndex ? 1 : -1)}
+                aria-label={`Ver fotografia ${index + 1}: ${photo.label}`}
+                aria-current={index === galleryIndex ? "true" : undefined}
+              >
+                <img src={photo.src} alt="" loading="lazy" decoding="async" />
+              </button>
+            ))}
+          </div>
+        </div>
       </section>
     </main>
   );
