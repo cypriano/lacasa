@@ -84,13 +84,82 @@ button { font: inherit; }
 .background-gallery__image--herbario { background-image: url("/floral-herbario.webp"); }
 .background-gallery__image--moldura { background-image: url("/floral-moldura.webp"); }
 .background-gallery__image--campo { background-image: url("/floral-campo.webp"); background-position: center 58%; }
+.background-gallery__image--florescer {
+  background-image: url("/floral-campo.webp");
+  background-position: center bottom;
+  clip-path: inset(calc((1 - var(--bloom)) * 72%) 0 0);
+  opacity: 0;
+  transform: translateY(calc((1 - var(--bloom)) * 19vh)) scale(calc(1.07 - var(--bloom) * .07));
+  transition: opacity .8s ease, clip-path .12s linear, transform .18s cubic-bezier(.2,.75,.2,1);
+}
+
+.background-gallery__image--florescer::after {
+  background:
+    linear-gradient(to bottom, rgba(249,247,241,.16), transparent 46%),
+    radial-gradient(ellipse at 50% 44%, rgba(249,247,241,.76) 0 10%, rgba(249,247,241,.3) 27%, transparent 56%);
+}
 
 .hero--theme-herbario .background-gallery__image--herbario,
 .hero--theme-moldura .background-gallery__image--moldura,
 .hero--theme-campo .background-gallery__image--campo { opacity: 1; transform: scale(1); }
+.hero--theme-florescer .background-gallery__image--florescer { opacity: 1; }
 
 .hero:not(.hero--theme-original) .botanical-field { opacity: 0; transform: scale(.94); }
 .hero:not(.hero--theme-original) .paper-grain { z-index: 2; }
+
+.hero--theme-florescer { touch-action: none; cursor: ns-resize; }
+.hero--theme-florescer.hero--bloom-complete { touch-action: pan-y; cursor: auto; }
+.hero--theme-florescer .hero__center {
+  opacity: clamp(.04, calc((var(--bloom) - .2) * 2.3), 1);
+  filter: blur(calc((1 - var(--bloom)) * 7px));
+  transform: translateY(calc((1 - var(--bloom)) * 30px)) scale(calc(.95 + var(--bloom) * .05));
+}
+.hero--theme-florescer .hero__center > * { animation: none; }
+.hero--theme-florescer .enter-button {
+  opacity: clamp(0, calc((var(--bloom) - .73) * 4), 1);
+  transform: translateY(calc((1 - var(--bloom)) * 12px));
+}
+.hero--theme-florescer .enter-button:disabled { pointer-events: none; }
+
+.magic-dust {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.hero--theme-florescer .magic-dust { opacity: clamp(0, calc((var(--bloom) - .18) * 1.8), .88); }
+.magic-dust i {
+  position: absolute;
+  left: var(--sparkle-x);
+  top: var(--sparkle-y);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #f1c981;
+  box-shadow: 0 0 8px 2px rgba(234,191,112,.72), 0 0 20px 6px rgba(255,242,196,.42);
+  animation: sparkle 3.4s var(--sparkle-delay) ease-in-out infinite;
+}
+.magic-dust i:nth-child(3n) { width: 2px; height: 2px; background: #fff7db; }
+
+.bloom-guide {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: 27px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  transform: translateX(-50%);
+  transition: opacity .45s ease;
+}
+.bloom-guide > span { position: relative; width: 72px; height: 1px; overflow: hidden; background: rgba(70,63,55,.2); }
+.bloom-guide > span i { position: absolute; inset: 0; background: var(--sage-dark); transform: scaleX(var(--bloom)); transform-origin: left; transition: transform .12s linear; }
+.bloom-guide p { margin: 0; white-space: nowrap; font-size: 8px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; }
+.bloom-guide b { font-size: 13px; font-weight: 400; animation: guideUp 1.5s ease-in-out infinite; }
+.hero--bloom-complete .bloom-guide { opacity: .56; }
 
 .hero__center {
   position: relative;
@@ -323,6 +392,8 @@ h1 {
 @keyframes titleReveal { from { opacity:0; letter-spacing:-.13em; transform:scale(.94); } to { opacity:1; letter-spacing:-.075em; transform:scale(1); } }
 @keyframes botanicalEnter { from { opacity:0; transform:translate(-50%,-50%) scale(.7) rotate(calc(var(--rotation) - 16deg)); } }
 @keyframes float { 0% { transform:translate3d(-3px,-7px,0) rotate(-4deg); } 48% { transform:translate3d(4px,2px,0) rotate(2deg); } 100% { transform:translate3d(-1px,9px,0) rotate(6deg); } }
+@keyframes sparkle { 0%,100% { opacity:.12; transform:translateY(13px) scale(.5); } 45% { opacity:1; transform:translateY(-11px) scale(1.15); } }
+@keyframes guideUp { 0%,100% { transform:translateY(3px); opacity:.45; } 50% { transform:translateY(-3px); opacity:1; } }
 
 @media (max-width: 700px) {
   .hero::before { inset: 9px; }
@@ -335,10 +406,14 @@ h1 {
   .botanical:not(.botanical--mobile):nth-child(3n) { display:none; }
   .background-gallery__image { background-position: center; }
   .background-gallery__image--campo { background-position: center bottom; }
+  .background-gallery__image--florescer { background-position: center bottom; clip-path: inset(calc((1 - var(--bloom)) * 76%) 0 0); }
   .background-gallery__image::after { background: radial-gradient(ellipse at 50% 44%, rgba(249,247,241,.8) 0 12%, rgba(249,247,241,.4) 31%, transparent 60%); }
   .theme-switcher { top: 24px; right: 50%; grid-template-columns: 29px auto auto; min-width: 218px; padding: 6px 8px; transform: translateX(50%); }
   .theme-switcher:hover, .theme-switcher:focus-visible { transform: translateX(50%) translateY(-2px); }
   .theme-switcher__icon { width: 29px; height: 29px; }
+  .bloom-guide { bottom: 62px; gap: 8px; }
+  .bloom-guide > span { width: 40px; }
+  .bloom-guide p { font-size: 7px; letter-spacing: .17em; }
   .edition { left:24px; bottom:23px; }
   .scroll-hint { right:22px; bottom:23px; }
 }

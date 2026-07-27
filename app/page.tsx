@@ -45,6 +45,7 @@ const visualThemes = [
   { id: "herbario", name: "Herbário" },
   { id: "moldura", name: "Moldura floral" },
   { id: "campo", name: "Campo de flores" },
+  { id: "florescer", name: "Florescer mágico" },
 ] as const;
 
 function BotanicalElement({ item, index }: { item: Botanical; index: number }) {
@@ -93,9 +94,13 @@ function BotanicalElement({ item, index }: { item: Botanical; index: number }) {
 export default function Home() {
   const [leaving, setLeaving] = useState(false);
   const [themeIndex, setThemeIndex] = useState(0);
+  const [bloomProgress, setBloomProgress] = useState(0);
   const heroRef = useRef<HTMLElement>(null);
   const frameRef = useRef<number | null>(null);
+  const bloomRef = useRef(0);
+  const dragRef = useRef<{ y: number; progress: number; pointerId: number } | null>(null);
   const theme = visualThemes[themeIndex];
+  const isBloom = theme.id === "florescer";
 
   const moveGarden = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch" || !heroRef.current) return;
@@ -112,6 +117,22 @@ export default function Home() {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
   }, []);
 
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero || !isBloom) return;
+    const handleWheel = (event: WheelEvent) => {
+      const current = bloomRef.current;
+      if (event.deltaY < 0 || current < 0.995) {
+        event.preventDefault();
+        const next = Math.min(1, Math.max(0, current + event.deltaY / 820));
+        bloomRef.current = next;
+        setBloomProgress(next);
+      }
+    };
+    hero.addEventListener("wheel", handleWheel, { passive: false });
+    return () => hero.removeEventListener("wheel", handleWheel);
+  }, [isBloom]);
+
   const enter = () => {
     if (leaving) return;
     setLeaving(true);
@@ -122,15 +143,46 @@ export default function Home() {
   };
 
   const cycleTheme = () => {
-    setThemeIndex((current) => (current + 1) % visualThemes.length);
+    setThemeIndex((current) => {
+      const next = (current + 1) % visualThemes.length;
+      if (visualThemes[next].id === "florescer") {
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        bloomRef.current = reducedMotion ? 1 : 0;
+        setBloomProgress(reducedMotion ? 1 : 0);
+      }
+      return next;
+    });
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    if (!isBloom || bloomProgress >= 0.995) return;
+    dragRef.current = { y: event.clientY, progress: bloomProgress, pointerId: event.pointerId };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLElement>) => {
+    moveGarden(event);
+    const drag = dragRef.current;
+    if (!isBloom || !drag || drag.pointerId !== event.pointerId) return;
+    const next = Math.min(1, Math.max(0, drag.progress + (drag.y - event.clientY) / (window.innerHeight * .68)));
+    bloomRef.current = next;
+    setBloomProgress(next);
+  };
+
+  const handlePointerEnd = (event: React.PointerEvent<HTMLElement>) => {
+    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
   };
 
   return (
     <main>
       <section
         ref={heroRef}
-        className={`hero hero--theme-${theme.id}${leaving ? " hero--leaving" : ""}`}
-        onPointerMove={moveGarden}
+        className={`hero hero--theme-${theme.id}${bloomProgress >= .995 ? " hero--bloom-complete" : ""}${leaving ? " hero--leaving" : ""}`}
+        style={{ "--bloom": bloomProgress.toFixed(3) } as CSSProperties}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
         aria-labelledby="la-casa-title"
       >
         <div className="paper-grain" aria-hidden="true" />
@@ -138,6 +190,16 @@ export default function Home() {
           <div className="background-gallery__image background-gallery__image--herbario" />
           <div className="background-gallery__image background-gallery__image--moldura" />
           <div className="background-gallery__image background-gallery__image--campo" />
+          <div className="background-gallery__image background-gallery__image--florescer" />
+        </div>
+        <div className="magic-dust" aria-hidden="true">
+          {Array.from({ length: 14 }).map((_, sparkle) => (
+            <i key={sparkle} style={{
+              "--sparkle-x": `${8 + ((sparkle * 37) % 84)}%`,
+              "--sparkle-y": `${18 + ((sparkle * 23) % 68)}%`,
+              "--sparkle-delay": `${-(sparkle * .41)}s`,
+            } as CSSProperties} />
+          ))}
         </div>
         <div className="botanical-field" aria-hidden="true">
           {botanicals.map((item, index) => (
@@ -151,18 +213,26 @@ export default function Home() {
             <small>Trocar cenário</small>
             <strong aria-live="polite">{theme.name}</strong>
           </span>
-          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 04</span>
+          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 05</span>
         </button>
 
         <div className="hero__center">
-          <p className="eyebrow"><span /> Um lugar para sentir <span /></p>
+          <p className="eyebrow"><span /> {isBloom ? "Quando a beleza encontra morada" : "Um lugar para sentir"} <span /></p>
           <h1 id="la-casa-title">La Casa</h1>
-          <p className="subtitle">flores • encontros • delicadezas</p>
-          <button className="enter-button" type="button" onClick={enter} aria-label="Entrar no site La Casa">
+          <p className="subtitle">{isBloom ? "há lugares que não se visitam — se sentem" : "flores • encontros • delicadezas"}</p>
+          <button className="enter-button" type="button" onClick={enter} aria-label="Entrar no site La Casa" disabled={isBloom && bloomProgress < .9}>
             <span>Entrar</span>
             <i aria-hidden="true">↓</i>
           </button>
         </div>
+
+        {isBloom && (
+          <div className="bloom-guide" aria-hidden="true">
+            <span><i /></span>
+            <p>{bloomProgress < .9 ? "Deslize para florescer" : "O jardim despertou"}</p>
+            <b>↑</b>
+          </div>
+        )}
 
         <p className="edition">São Paulo · 2026</p>
         <p className="scroll-hint" aria-hidden="true">descubra</p>
