@@ -51,6 +51,7 @@ const visualThemes = [
   { id: "narrativa-branca", name: "Manifesto branco" },
   { id: "aquarela", name: "Aquarela" },
   { id: "aquarela-editorial", name: "Aquarela editorial" },
+  { id: "espaco-interativo", name: "Conheça o espaço" },
 ] as const;
 
 const kineticWords = ["Sonhar", "Acreditar", "Realizar", "Celebrar"] as const;
@@ -62,6 +63,28 @@ const kineticPatternRows = [
 ] as const;
 const spacePhotoIndices = [17, 3, 5, 8, 0, 10] as const;
 const assetBase = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
+const frontSpaceMarkers = [
+  { id: "cozinha", label: "Cozinha industrial", detail: "Estrutura profissional para a operação completa do evento.", x: 31, y: 56 },
+  { id: "salao", label: "Salão climatizado", detail: "Conforto térmico e amplitude para receber diferentes formatos de celebração.", x: 47, y: 34 },
+  { id: "hall", label: "Hall de entrada", detail: "O primeiro ambiente interno da experiência La Casa.", x: 53, y: 57 },
+  { id: "lounges", label: "Lounges", detail: "Ambientes acolhedores para pausas, encontros e conversas.", x: 62, y: 58 },
+  { id: "portico", label: "Pórtico de recepção", detail: "Uma chegada marcante, integrada à arquitetura e ao jardim.", x: 70, y: 54 },
+  { id: "camarim", label: "Camarim", detail: "Espaço reservado para preparação e momentos antes da celebração.", x: 79, y: 60 },
+  { id: "apoio", label: "Área de apoio", detail: "Estrutura discreta que garante fluidez à produção do evento.", x: 91, y: 68 },
+] as const;
+
+const aerialSpaceMarkers = [
+  { id: "salao-aereo", label: "Salão climatizado", detail: "O salão principal combina arquitetura acolhedora, amplitude e conforto.", x: 29, y: 31 },
+  { id: "hall-aereo", label: "Hall de entrada", detail: "Entrada principal conectada ao jardim e à circulação externa.", x: 28, y: 47 },
+  { id: "externos", label: "Ambientes externos", detail: "Áreas ao ar livre que prolongam a experiência para junto da natureza.", x: 47, y: 58 },
+  { id: "fonte", label: "Fonte e paisagismo", detail: "Água e vegetação criam uma chegada fresca, sonora e memorável.", x: 61, y: 61 },
+  { id: "portico-aereo", label: "Pórtico de recepção", detail: "A recepção coberta integra os diferentes ambientes do espaço.", x: 76, y: 34 },
+  { id: "lounges-aereo", label: "Lounges", detail: "Espaços versáteis para receber, descansar e celebrar.", x: 78, y: 50 },
+  { id: "estacionamento", label: "Estacionamento", detail: "Acesso conveniente para convidados e fornecedores.", x: 91, y: 8 },
+] as const;
+
+const facilities = ["Paisagismo", "Ambientes externos", "Salão climatizado", "Hall de entrada", "Pórtico de recepção", "Lounges", "Camarim", "Estacionamento", "Cozinha industrial", "Banheiros", "Fraldário", "Área de apoio"] as const;
 
 const galleryPhotos = [
   { src: `${assetBase}/gallery/01.webp`, label: "Casamentos", alt: "Casal em meio a uma instalação floral iluminada" },
@@ -156,6 +179,8 @@ export default function Home() {
   const [bloomProgress, setBloomProgress] = useState(0);
   const [typeProgress, setTypeProgress] = useState(0);
   const [watercolorWelcomeVisible, setWatercolorWelcomeVisible] = useState(false);
+  const [activeFrontMarker, setActiveFrontMarker] = useState<string>(frontSpaceMarkers[1].id);
+  const [activeAerialMarker, setActiveAerialMarker] = useState<string>(aerialSpaceMarkers[3].id);
   const heroRef = useRef<HTMLElement>(null);
   const typeSectionRef = useRef<HTMLElement>(null);
   const watercolorWelcomeRef = useRef<HTMLElement>(null);
@@ -171,6 +196,7 @@ export default function Home() {
   const isWhiteNarrative = theme.id === "narrativa-branca";
   const isWatercolorEditorial = theme.id === "aquarela-editorial";
   const isWatercolor = theme.id === "aquarela" || isWatercolorEditorial;
+  const isInteractiveSpace = theme.id === "espaco-interativo";
 
   const moveGarden = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch" || !heroRef.current) return;
@@ -355,7 +381,7 @@ export default function Home() {
             <small>Trocar cenário</small>
             <strong aria-live="polite">{theme.name}</strong>
           </span>
-          <span className="theme-switcher__count" aria-hidden="true">{String(themeIndex + 1).padStart(2, "0")} / 10</span>
+          <span className="theme-switcher__count" aria-hidden="true">{String(themeIndex + 1).padStart(2, "0")} / 11</span>
         </button>
 
         <div className="hero__center">
@@ -480,6 +506,14 @@ export default function Home() {
                 <button type="button" onClick={() => document.querySelector("#momentos")?.scrollIntoView({ behavior: "smooth" })}>Conheça nosso espaço ↓</button>
               </div>
             </section>
+          ) : isInteractiveSpace ? (
+            <section id="proxima" className="next-section next-section--space" aria-labelledby="next-title">
+              <div className="next-section__ornament" aria-hidden="true"><i /><span /><i /></div>
+              <p>Arquitetura, natureza e celebração</p>
+              <h2 id="next-title">Bem-vindo ao<br /><em>La Casa</em></h2>
+              <p className="next-section__note">Descubra cada ambiente de um espaço pensado para receber histórias inesquecíveis.</p>
+              <button type="button" onClick={() => document.querySelector("#conheca-o-espaco")?.scrollIntoView({ behavior: "smooth" })}>Conheça o espaço ↓</button>
+            </section>
           ) : (
             <section id="proxima" className="next-section" aria-labelledby="next-title">
               <div className="next-section__ornament" aria-hidden="true"><i /><span /><i /></div>
@@ -488,6 +522,74 @@ export default function Home() {
               <p className="next-section__note">Cada celebração encontra aqui um jeito único de florescer.</p>
               <button type="button" onClick={() => document.querySelector("#momentos")?.scrollIntoView({ behavior: "smooth" })}>Conheça nossas histórias ↓</button>
             </section>
+          )}
+
+          {isInteractiveSpace && (
+            <>
+              <nav className="space-section-tab" aria-label="Navegação da apresentação do espaço">
+                <button type="button" onClick={() => document.querySelector("#conheca-o-espaco")?.scrollIntoView({ behavior: "smooth" })}><span>01</span> Conheça o espaço</button>
+              </nav>
+
+              <section id="conheca-o-espaco" className="interactive-space-section" aria-labelledby="interactive-space-title">
+                <header className="interactive-space-header">
+                  <p><span /> La Casa por inteiro</p>
+                  <div>
+                    <h2 id="interactive-space-title">Conheça<br /><em>o espaço</em></h2>
+                    <p>Uma estrutura completa, desenhada para transformar diferentes momentos de uma celebração em uma experiência contínua.</p>
+                  </div>
+                </header>
+
+                <div className="space-blueprint">
+                  <div className="space-blueprint__label"><span>Elevação frontal</span><i>Toque nos pontos para explorar</i></div>
+                  <div className="space-blueprint__viewport">
+                    <div className="space-blueprint__canvas">
+                      <img src={`${assetBase}/la-casa-vista-frontal.svg`} alt="Croqui com vista frontal da arquitetura do La Casa" />
+                      {frontSpaceMarkers.map((marker, index) => (
+                        <button
+                          key={marker.id}
+                          type="button"
+                          className={`space-marker${activeFrontMarker === marker.id ? " is-active" : ""}`}
+                          style={{ "--marker-x": `${marker.x}%`, "--marker-y": `${marker.y}%` } as CSSProperties}
+                          onClick={() => setActiveFrontMarker(marker.id)}
+                          aria-label={`Ver ${marker.label}`}
+                          aria-pressed={activeFrontMarker === marker.id}
+                        ><b>{String(index + 1).padStart(2, "0")}</b><span>{marker.label}</span></button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-marker-detail" aria-live="polite">
+                    <span>{String(frontSpaceMarkers.findIndex((marker) => marker.id === activeFrontMarker) + 1).padStart(2, "0")}</span>
+                    <div><h3>{frontSpaceMarkers.find((marker) => marker.id === activeFrontMarker)?.label}</h3><p>{frontSpaceMarkers.find((marker) => marker.id === activeFrontMarker)?.detail}</p></div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-aerial-section" aria-labelledby="space-aerial-title">
+                <header>
+                  <p>Entre o conforto<br />e a natureza</p>
+                  <h2 id="space-aerial-title">Uma estrutura<br /><em>que acolhe.</em></h2>
+                  <p>Contamos com uma estrutura que mescla ambientes fechados e climatizados com espaços abertos, unindo arquitetura, conforto e toda a exuberância e beleza da natureza.</p>
+                </header>
+                <div className="space-aerial-map">
+                  <img src={`${assetBase}/la-casa-vista-aerea.webp`} alt="Vista aérea do jardim, fonte e construções do La Casa" loading="lazy" decoding="async" />
+                  {aerialSpaceMarkers.map((marker, index) => (
+                    <button
+                      key={marker.id}
+                      type="button"
+                      className={`space-marker space-marker--photo${activeAerialMarker === marker.id ? " is-active" : ""}`}
+                      style={{ "--marker-x": `${marker.x}%`, "--marker-y": `${marker.y}%` } as CSSProperties}
+                      onClick={() => setActiveAerialMarker(marker.id)}
+                      aria-label={`Ver ${marker.label}`}
+                      aria-pressed={activeAerialMarker === marker.id}
+                    ><b>{String(index + 1).padStart(2, "0")}</b><span>{marker.label}</span></button>
+                  ))}
+                  <div className="space-aerial-card" aria-live="polite"><small>Em destaque</small><h3>{aerialSpaceMarkers.find((marker) => marker.id === activeAerialMarker)?.label}</h3><p>{aerialSpaceMarkers.find((marker) => marker.id === activeAerialMarker)?.detail}</p></div>
+                </div>
+                <div className="facilities-grid" aria-label="Estruturas disponíveis">
+                  {facilities.map((facility, index) => <div key={facility}><span>{String(index + 1).padStart(2, "0")}</span><p>{facility}</p></div>)}
+                </div>
+              </section>
+            </>
           )}
 
           <section id="momentos" className="editorial-section" aria-labelledby="editorial-title">

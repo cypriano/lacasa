@@ -111,7 +111,8 @@ button { font: inherit; }
 
 .hero--theme-herbario .background-gallery__image--herbario,
 .hero--theme-moldura .background-gallery__image--moldura,
-.hero--theme-campo .background-gallery__image--campo { opacity: 1; transform: scale(1); }
+.hero--theme-campo .background-gallery__image--campo,
+.hero--theme-espaco-interativo .background-gallery__image--campo { opacity: 1; transform: scale(1); }
 .hero--theme-florescer .background-gallery__image--florescer { opacity: 1; }
 .hero--theme-natural .background-gallery__image--natural { opacity: 1; }
 .hero--theme-natural .paper-grain { display: none; }
@@ -460,6 +461,62 @@ h1 {
 .next-section--aquarela { background:#687260; }
 .next-section--aquarela h2 em { color:#efd0c4; }
 .next-section--aquarela .next-section__note { max-width:440px; }
+.next-section--space { background:#596653; }
+.next-section--space h2 em { color:#ead0b9; }
+.next-section--space .next-section__note { max-width:500px; }
+
+.space-section-tab { position:sticky; z-index:20; top:22px; display:flex; justify-content:flex-end; height:0; padding-right:26px; pointer-events:none; }
+.space-section-tab button { display:flex; height:48px; border:1px solid rgba(61,55,47,.16); border-radius:30px; padding:0 22px 0 8px; align-items:center; gap:12px; background:rgba(252,250,245,.88); color:#4e493f; box-shadow:0 12px 38px rgba(53,47,38,.08); font-size:9px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; backdrop-filter:blur(14px); cursor:pointer; pointer-events:auto; }
+.space-section-tab button span { display:grid; width:32px; height:32px; border-radius:50%; place-items:center; background:#596653; color:#fff; font-size:8px; }
+
+.interactive-space-section { padding:clamp(110px,13vw,190px) 0 clamp(120px,15vw,220px); overflow:hidden; background:#faf8f2; color:#3c3933; }
+.interactive-space-header { display:grid; grid-template-columns:.7fr 1.3fr; width:min(1360px,88vw); margin:0 auto clamp(80px,9vw,130px); align-items:start; }
+.interactive-space-header > p { display:flex; margin:13px 0 0; align-items:center; gap:10px; color:#756e64; font-size:8px; font-weight:600; letter-spacing:.28em; text-transform:uppercase; }
+.interactive-space-header > p span { width:28px; height:1px; background:currentColor; }
+.interactive-space-header > div { display:grid; grid-template-columns:1fr minmax(260px,.7fr); gap:clamp(34px,6vw,95px); align-items:end; }
+.interactive-space-header h2 { margin:0; font:400 clamp(68px,8.5vw,130px)/.82 Didot,"Bodoni 72",Georgia,serif; letter-spacing:-.06em; }
+.interactive-space-header h2 em { color:#9c6958; font-weight:400; }
+.interactive-space-header > div > p { margin:0 0 7px; color:#777067; font:italic 16px/1.75 Georgia,serif; }
+
+.space-blueprint { width:min(1600px,94vw); margin:auto; }
+.space-blueprint__label { display:flex; margin:0 2vw 24px; justify-content:space-between; color:#766e63; font-size:8px; letter-spacing:.24em; text-transform:uppercase; }
+.space-blueprint__label i { font-style:normal; opacity:.6; }
+.space-blueprint__viewport { overflow-x:auto; overflow-y:hidden; scrollbar-color:#a99777 transparent; scrollbar-width:thin; }
+.space-blueprint__canvas { position:relative; min-width:1180px; aspect-ratio:8.42/1; margin:0 2vw; border-top:1px solid rgba(76,51,0,.2); border-bottom:1px solid rgba(76,51,0,.2); background:#f7f2e9; }
+.space-blueprint__canvas img { display:block; width:100%; height:100%; object-fit:contain; }
+.space-marker { --marker-x:50%; --marker-y:50%; position:absolute; z-index:3; left:var(--marker-x); top:var(--marker-y); display:flex; border:0; padding:0; align-items:center; background:transparent; color:#4c3300; transform:translate(-50%,-50%); cursor:pointer; }
+.space-marker b { position:relative; z-index:2; display:grid; width:32px; height:32px; border:1px solid currentColor; border-radius:50%; place-items:center; background:rgba(250,248,242,.96); font-size:8px; font-weight:600; box-shadow:0 4px 18px rgba(73,50,15,.12); transition:background .35s ease,color .35s ease,transform .35s ease; }
+.space-marker b::after { content:""; position:absolute; inset:-6px; border:1px solid currentColor; border-radius:50%; opacity:.22; animation:markerPulse 2.5s ease-in-out infinite; }
+.space-marker span { max-width:0; overflow:hidden; padding:10px 0; background:#4c3300; color:#fff; font-size:8px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; white-space:nowrap; opacity:0; transform:translateX(-8px); transition:max-width .45s ease,padding .45s ease,opacity .35s ease,transform .45s ease; }
+.space-marker:hover span,.space-marker:focus-visible span,.space-marker.is-active span { max-width:220px; padding:10px 14px 10px 19px; opacity:1; transform:translateX(-7px); }
+.space-marker:hover b,.space-marker:focus-visible b,.space-marker.is-active b { background:#4c3300; color:#fff; transform:scale(1.08); }
+.space-marker-detail { display:grid; grid-template-columns:70px minmax(0,560px); width:min(720px,86vw); min-height:132px; margin:38px 2vw 0 auto; align-items:start; border-top:1px solid rgba(76,51,0,.25); padding-top:22px; }
+.space-marker-detail > span { color:#9c6958; font:italic 32px/1 Georgia,serif; }
+.space-marker-detail h3 { margin:0 0 9px; font:400 clamp(25px,2.4vw,36px)/1 Didot,"Bodoni 72",Georgia,serif; }
+.space-marker-detail p { margin:0; color:#777067; font:14px/1.7 "Helvetica Neue",sans-serif; }
+
+.space-aerial-section { padding:clamp(110px,14vw,210px) 6vw clamp(130px,16vw,240px); background:#ede8dd; color:#393630; }
+.space-aerial-section > header { display:grid; grid-template-columns:.55fr 1fr .75fr; width:min(1440px,100%); margin:0 auto clamp(70px,8vw,120px); gap:clamp(30px,5vw,80px); align-items:end; }
+.space-aerial-section > header > p:first-child { align-self:start; margin:10px 0 0; color:#71695e; font-size:8px; font-weight:600; line-height:1.7; letter-spacing:.28em; text-transform:uppercase; }
+.space-aerial-section h2 { margin:0; font:400 clamp(62px,7.6vw,118px)/.84 Didot,"Bodoni 72",Georgia,serif; letter-spacing:-.06em; }
+.space-aerial-section h2 em { color:#9c6958; font-weight:400; }
+.space-aerial-section > header > p:last-child { margin:0 0 5px; color:#6e675e; font:italic 15px/1.75 Georgia,serif; }
+.space-aerial-map { position:relative; width:min(1500px,100%); aspect-ratio:1.875/1; margin:auto; overflow:hidden; background:#cec8bc; }
+.space-aerial-map::after { content:""; position:absolute; z-index:1; inset:0; background:linear-gradient(90deg,rgba(23,27,20,.08),transparent 34% 72%,rgba(23,27,20,.06)); pointer-events:none; }
+.space-aerial-map > img { display:block; width:100%; height:100%; object-fit:cover; }
+.space-marker--photo { z-index:3; color:#fff; }
+.space-marker--photo b { background:rgba(50,57,45,.78); border-color:rgba(255,255,255,.85); backdrop-filter:blur(5px); }
+.space-marker--photo b::after { border-color:#fff; }
+.space-marker--photo span { background:rgba(50,57,45,.9); }
+.space-marker--photo:hover b,.space-marker--photo:focus-visible b,.space-marker--photo.is-active b { background:#f4eee3; color:#485040; }
+.space-aerial-card { position:absolute; z-index:4; right:28px; bottom:28px; width:min(350px,calc(100% - 56px)); padding:24px 26px; background:rgba(250,247,240,.9); color:#403c35; backdrop-filter:blur(16px); }
+.space-aerial-card small { font-size:7px; font-weight:600; letter-spacing:.26em; text-transform:uppercase; opacity:.6; }
+.space-aerial-card h3 { margin:12px 0 8px; font:400 28px/1 Didot,"Bodoni 72",Georgia,serif; }
+.space-aerial-card p { margin:0; color:#6e675e; font-size:12px; line-height:1.6; }
+.facilities-grid { display:grid; grid-template-columns:repeat(4,1fr); width:min(1400px,100%); margin:clamp(70px,8vw,120px) auto 0; border-top:1px solid rgba(57,54,48,.2); border-left:1px solid rgba(57,54,48,.2); }
+.facilities-grid div { min-height:112px; border-right:1px solid rgba(57,54,48,.2); border-bottom:1px solid rgba(57,54,48,.2); padding:19px 20px; }
+.facilities-grid span { color:#9c6958; font:italic 15px/1 Georgia,serif; }
+.facilities-grid p { margin:22px 0 0; font:400 clamp(18px,1.55vw,25px)/1.1 Didot,"Bodoni 72",Georgia,serif; }
 
 .watercolor-welcome {
   position: relative;
@@ -722,6 +779,7 @@ h1 {
   72% { opacity:.82; filter:blur(2px) saturate(.78); }
   100% { opacity:.96; filter:blur(0) saturate(.86); transform:scale(1) translate3d(0,0,0); }
 }
+@keyframes markerPulse { 0%,100% { opacity:.16; transform:scale(.92); } 50% { opacity:.42; transform:scale(1.18); } }
 
 @media (max-width: 700px) {
   .hero::before { inset: 9px; }
@@ -819,6 +877,36 @@ h1 {
   .watercolor-painting--framed .watercolor-painting__base,
   .watercolor-painting--framed .watercolor-painting__brushes i { background-size:cover; }
   .watercolor-editorial-reveal__caption { font-size:16px; text-align:left; }
+  .space-section-tab { top:14px; padding-right:14px; }
+  .space-section-tab button { height:42px; padding-right:16px; }
+  .space-section-tab button span { width:28px; height:28px; }
+  .interactive-space-section { padding:110px 0 120px; }
+  .interactive-space-header { display:block; width:auto; margin:0 22px 75px; }
+  .interactive-space-header > p { margin-bottom:34px; }
+  .interactive-space-header > div { display:block; }
+  .interactive-space-header h2 { font-size:clamp(64px,20vw,92px); }
+  .interactive-space-header > div > p { margin-top:35px; font-size:15px; }
+  .space-blueprint { width:100%; }
+  .space-blueprint__label { margin:0 22px 20px; }
+  .space-blueprint__label i { display:none; }
+  .space-blueprint__viewport { padding-bottom:14px; }
+  .space-blueprint__canvas { min-width:1180px; margin:0 22px; }
+  .space-marker-detail { grid-template-columns:48px 1fr; width:auto; min-height:145px; margin:28px 22px 0; }
+  .space-marker-detail > span { font-size:25px; }
+  .space-marker-detail h3 { font-size:27px; }
+  .space-aerial-section { padding:110px 14px 130px; }
+  .space-aerial-section > header { display:block; margin:0 10px 65px; }
+  .space-aerial-section > header > p:first-child { margin-bottom:32px; }
+  .space-aerial-section h2 { font-size:clamp(60px,18vw,84px); }
+  .space-aerial-section > header > p:last-child { margin-top:35px; font-size:15px; }
+  .space-aerial-map { aspect-ratio:3/4; }
+  .space-aerial-map > img { object-position:center; }
+  .space-marker--photo span { display:none; }
+  .space-aerial-card { right:14px; bottom:14px; width:calc(100% - 28px); padding:20px; }
+  .space-aerial-card h3 { font-size:25px; }
+  .facilities-grid { grid-template-columns:repeat(2,1fr); margin-top:75px; }
+  .facilities-grid div { min-height:104px; padding:16px; }
+  .facilities-grid p { margin-top:18px; font-size:18px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
