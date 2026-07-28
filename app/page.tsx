@@ -52,6 +52,12 @@ const visualThemes = [
 ] as const;
 
 const kineticWords = ["Sonhar", "Acreditar", "Realizar", "Celebrar"] as const;
+const kineticPatternRows = [
+  "Sonhar Acreditar Realizar && Celebrar !",
+  "Celebrar ! Sonhar Acreditar Realizar &&",
+  "Realizar && Celebrar ! Sonhar Acreditar",
+  "Acreditar Realizar && Celebrar ! Sonhar",
+] as const;
 const spacePhotoIndices = [17, 3, 5, 8, 0, 10] as const;
 
 const galleryPhotos = [
@@ -324,24 +330,33 @@ export default function Home() {
           <section id="manifesto" ref={typeSectionRef} className={`kinetic-section${isWhiteNarrative ? " kinetic-section--light" : ""}`} aria-label="Sonhar, acreditar, realizar e celebrar">
             <div className="kinetic-sticky">
               <div className="kinetic-index"><span>{isWhiteNarrative ? "Manifesto de luz" : "Manifesto"}</span><i>{String(Math.round(typeProgress * 100)).padStart(2, "0")}</i></div>
-              <b className="kinetic-ampersand" aria-hidden="true" style={{ transform: `translate(-50%, -50%) rotate(${typeProgress * 80 - 40}deg)` }}>&amp;</b>
-              <div className="kinetic-words" aria-hidden="true">
-                {kineticWords.map((word, index) => {
-                  const midpoint = .12 + index * .25;
-                  const distance = typeProgress - midpoint;
-                  const opacity = Math.max(.12, 1 - Math.abs(distance) * 3.7);
-                  const direction = index % 2 === 0 ? 1 : -1;
-                  const transform = isWhiteNarrative
-                    ? `translateY(${distance * direction * 82}vh) rotate(${distance * direction * 5}deg) scale(${.78 + opacity * .22})`
-                    : `translateX(${distance * direction * 125}vw) scale(${.92 + opacity * .08})`;
-                  return (
-                    <span key={word} style={{
-                      opacity,
-                      transform,
-                    }}>{word}{index === 3 ? "." : ""}</span>
-                  );
-                })}
-              </div>
+              {isWhiteNarrative ? (
+                <div className="kinetic-pattern" aria-hidden="true">
+                  {Array.from({ length: 16 }).map((_, index) => {
+                    const direction = index % 2 === 0 ? 1 : -1;
+                    const offset = (typeProgress - .5) * direction * (10 + index % 4 * 2.5);
+                    return <p key={index} style={{ transform: `translateX(calc(-50% + ${offset}vw))` }}>{kineticPatternRows[index % kineticPatternRows.length]}</p>;
+                  })}
+                </div>
+              ) : (
+                <>
+                  <b className="kinetic-ampersand" aria-hidden="true" style={{ transform: `translate(-50%, -50%) rotate(${typeProgress * 80 - 40}deg)` }}>&amp;</b>
+                  <div className="kinetic-words" aria-hidden="true">
+                    {kineticWords.map((word, index) => {
+                      const midpoint = .12 + index * .25;
+                      const distance = typeProgress - midpoint;
+                      const opacity = Math.max(.12, 1 - Math.abs(distance) * 3.7);
+                      const direction = index % 2 === 0 ? 1 : -1;
+                      return (
+                        <span key={word} style={{
+                          opacity,
+                          transform: `translateX(${distance * direction * 125}vw) scale(${.92 + opacity * .08})`,
+                        }}>{word}{index === 3 ? "." : ""}</span>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
               <p className="kinetic-hint">Continue para descobrir <span>↓</span></p>
             </div>
           </section>
