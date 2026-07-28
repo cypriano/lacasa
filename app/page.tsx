@@ -48,6 +48,7 @@ const visualThemes = [
   { id: "florescer", name: "Florescer mágico" },
   { id: "natural", name: "Jardim natural" },
   { id: "narrativa", name: "Nova narrativa" },
+  { id: "narrativa-branca", name: "Manifesto branco" },
 ] as const;
 
 const kineticWords = ["Sonhar", "Acreditar", "Realizar", "Celebrar"] as const;
@@ -142,7 +143,8 @@ export default function Home() {
   const dragRef = useRef<{ y: number; progress: number; pointerId: number } | null>(null);
   const theme = visualThemes[themeIndex];
   const isBloom = theme.id === "florescer";
-  const isNarrative = theme.id === "narrativa";
+  const isNarrative = theme.id === "narrativa" || theme.id === "narrativa-branca";
+  const isWhiteNarrative = theme.id === "narrativa-branca";
 
   const moveGarden = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch" || !heroRef.current) return;
@@ -284,7 +286,7 @@ export default function Home() {
             <small>Trocar cenário</small>
             <strong aria-live="polite">{theme.name}</strong>
           </span>
-          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 07</span>
+          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 08</span>
         </button>
 
         <div className="hero__center">
@@ -319,9 +321,9 @@ export default function Home() {
             <button type="button" onClick={() => document.querySelector("#manifesto")?.scrollIntoView({ behavior: "smooth" })}>Conheça nosso espaço ↓</button>
           </section>
 
-          <section id="manifesto" ref={typeSectionRef} className="kinetic-section" aria-label="Sonhar, acreditar, realizar e celebrar">
+          <section id="manifesto" ref={typeSectionRef} className={`kinetic-section${isWhiteNarrative ? " kinetic-section--light" : ""}`} aria-label="Sonhar, acreditar, realizar e celebrar">
             <div className="kinetic-sticky">
-              <div className="kinetic-index"><span>Manifesto</span><i>{String(Math.round(typeProgress * 100)).padStart(2, "0")}</i></div>
+              <div className="kinetic-index"><span>{isWhiteNarrative ? "Manifesto de luz" : "Manifesto"}</span><i>{String(Math.round(typeProgress * 100)).padStart(2, "0")}</i></div>
               <b className="kinetic-ampersand" aria-hidden="true" style={{ transform: `translate(-50%, -50%) rotate(${typeProgress * 80 - 40}deg)` }}>&amp;</b>
               <div className="kinetic-words" aria-hidden="true">
                 {kineticWords.map((word, index) => {
@@ -329,10 +331,13 @@ export default function Home() {
                   const distance = typeProgress - midpoint;
                   const opacity = Math.max(.12, 1 - Math.abs(distance) * 3.7);
                   const direction = index % 2 === 0 ? 1 : -1;
+                  const transform = isWhiteNarrative
+                    ? `translateY(${distance * direction * 82}vh) rotate(${distance * direction * 5}deg) scale(${.78 + opacity * .22})`
+                    : `translateX(${distance * direction * 125}vw) scale(${.92 + opacity * .08})`;
                   return (
                     <span key={word} style={{
                       opacity,
-                      transform: `translateX(${distance * direction * 125}vw) scale(${.92 + opacity * .08})`,
+                      transform,
                     }}>{word}{index === 3 ? "." : ""}</span>
                   );
                 })}
