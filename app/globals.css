@@ -81,11 +81,11 @@ button { font: inherit; }
   background: radial-gradient(ellipse at 50% 46%, rgba(249,247,241,.74) 0 10%, rgba(249,247,241,.3) 27%, transparent 52%);
 }
 
-.background-gallery__image--herbario { background-image: url("/floral-herbario.webp"); }
-.background-gallery__image--moldura { background-image: url("/floral-moldura.webp"); }
-.background-gallery__image--campo { background-image: url("/floral-campo.webp"); background-position: center 58%; }
+.background-gallery__image--herbario { background-image: var(--floral-herbario); }
+.background-gallery__image--moldura { background-image: var(--floral-moldura); }
+.background-gallery__image--campo { background-image: var(--floral-campo); background-position: center 58%; }
 .background-gallery__image--florescer {
-  background-image: url("/floral-campo.webp");
+  background-image: var(--floral-campo);
   background-position: center bottom;
   clip-path: inset(calc((1 - var(--bloom)) * 72%) 0 0);
   opacity: 0;
@@ -99,7 +99,7 @@ button { font: inherit; }
     radial-gradient(ellipse at 50% 44%, rgba(249,247,241,.76) 0 10%, rgba(249,247,241,.3) 27%, transparent 56%);
 }
 .background-gallery__image--natural {
-  background-image: url("/floral-campo.webp");
+  background-image: var(--floral-campo);
   background-position: center bottom;
   background-repeat: no-repeat;
   background-size: cover;

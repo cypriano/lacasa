@@ -59,27 +59,28 @@ const kineticPatternRows = [
   "Acreditar Realizar && Celebrar ! Sonhar",
 ] as const;
 const spacePhotoIndices = [17, 3, 5, 8, 0, 10] as const;
+const assetBase = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 const galleryPhotos = [
-  { src: "/gallery/01.webp", label: "Casamentos", alt: "Casal em meio a uma instalação floral iluminada" },
-  { src: "/gallery/02.webp", label: "A festa", alt: "Casal dançando sob luzes coloridas" },
-  { src: "/gallery/03.webp", label: "Cerimônias", alt: "Casal cercado por um arco de flores brancas" },
-  { src: "/gallery/04.webp", label: "Cenografia", alt: "Mesa de celebração com flores intensas e globos espelhados" },
-  { src: "/gallery/05.webp", label: "Detalhes", alt: "Bolo de casamento decorado com rosas vermelhas" },
-  { src: "/gallery/06.webp", label: "Detalhes", alt: "Bolo branco entre flores e luzes suspensas" },
-  { src: "/gallery/07.webp", label: "Celebrações", alt: "Debutante em vestido bordado junto à decoração floral" },
-  { src: "/gallery/08.webp", label: "Celebrações", alt: "Debutante sorrindo diante de uma parede de flores" },
-  { src: "/gallery/09.webp", label: "Detalhes", alt: "Bolo de quinze anos suspenso sobre cristais" },
-  { src: "/gallery/10.webp", label: "Casamentos", alt: "Retrato de noiva diante de flores brancas" },
-  { src: "/gallery/11.webp", label: "Noite", alt: "Casal na entrada floral da La Casa à noite" },
-  { src: "/gallery/12.webp", label: "Casamentos", alt: "Noiva com buquê branco em cenário floral" },
-  { src: "/gallery/13.webp", label: "Casamentos", alt: "Casal sorrindo diante da mesa do casamento" },
-  { src: "/gallery/14.webp", label: "A festa", alt: "Casal dançando em frente ao palco" },
-  { src: "/gallery/15.webp", label: "Casamentos", alt: "Noiva ao lado do bolo sob luzes quentes" },
-  { src: "/gallery/16.webp", label: "Casamentos", alt: "Noiva em retrato frontal no salão" },
-  { src: "/gallery/17.webp", label: "Memórias", alt: "Retrato em preto e branco de noiva com buquê" },
-  { src: "/gallery/18.webp", label: "O espaço", alt: "Jardim, fonte e arquitetura externa da La Casa" },
-  { src: "/gallery/19.webp", label: "Memórias", alt: "Casal dentro do carro após a celebração" },
+  { src: `${assetBase}/gallery/01.webp`, label: "Casamentos", alt: "Casal em meio a uma instalação floral iluminada" },
+  { src: `${assetBase}/gallery/02.webp`, label: "A festa", alt: "Casal dançando sob luzes coloridas" },
+  { src: `${assetBase}/gallery/03.webp`, label: "Cerimônias", alt: "Casal cercado por um arco de flores brancas" },
+  { src: `${assetBase}/gallery/04.webp`, label: "Cenografia", alt: "Mesa de celebração com flores intensas e globos espelhados" },
+  { src: `${assetBase}/gallery/05.webp`, label: "Detalhes", alt: "Bolo de casamento decorado com rosas vermelhas" },
+  { src: `${assetBase}/gallery/06.webp`, label: "Detalhes", alt: "Bolo branco entre flores e luzes suspensas" },
+  { src: `${assetBase}/gallery/07.webp`, label: "Celebrações", alt: "Debutante em vestido bordado junto à decoração floral" },
+  { src: `${assetBase}/gallery/08.webp`, label: "Celebrações", alt: "Debutante sorrindo diante de uma parede de flores" },
+  { src: `${assetBase}/gallery/09.webp`, label: "Detalhes", alt: "Bolo de quinze anos suspenso sobre cristais" },
+  { src: `${assetBase}/gallery/10.webp`, label: "Casamentos", alt: "Retrato de noiva diante de flores brancas" },
+  { src: `${assetBase}/gallery/11.webp`, label: "Noite", alt: "Casal na entrada floral da La Casa à noite" },
+  { src: `${assetBase}/gallery/12.webp`, label: "Casamentos", alt: "Noiva com buquê branco em cenário floral" },
+  { src: `${assetBase}/gallery/13.webp`, label: "Casamentos", alt: "Casal sorrindo diante da mesa do casamento" },
+  { src: `${assetBase}/gallery/14.webp`, label: "A festa", alt: "Casal dançando em frente ao palco" },
+  { src: `${assetBase}/gallery/15.webp`, label: "Casamentos", alt: "Noiva ao lado do bolo sob luzes quentes" },
+  { src: `${assetBase}/gallery/16.webp`, label: "Casamentos", alt: "Noiva em retrato frontal no salão" },
+  { src: `${assetBase}/gallery/17.webp`, label: "Memórias", alt: "Retrato em preto e branco de noiva com buquê" },
+  { src: `${assetBase}/gallery/18.webp`, label: "O espaço", alt: "Jardim, fonte e arquitetura externa da La Casa" },
+  { src: `${assetBase}/gallery/19.webp`, label: "Memórias", alt: "Casal dentro do carro após a celebração" },
 ] as const;
 
 function BotanicalElement({ item, index }: { item: Botanical; index: number }) {
@@ -252,7 +253,11 @@ export default function Home() {
   };
 
   return (
-    <main>
+    <main style={{
+      "--floral-herbario": `url("${assetBase}/floral-herbario.webp")`,
+      "--floral-moldura": `url("${assetBase}/floral-moldura.webp")`,
+      "--floral-campo": `url("${assetBase}/floral-campo.webp")`,
+    } as CSSProperties}>
       <section
         ref={heroRef}
         className={`hero hero--theme-${theme.id}${bloomProgress >= .995 ? " hero--bloom-complete" : ""}${leaving ? " hero--leaving" : ""}`}
