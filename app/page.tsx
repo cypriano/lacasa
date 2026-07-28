@@ -50,6 +50,7 @@ const visualThemes = [
   { id: "narrativa", name: "Nova narrativa" },
   { id: "narrativa-branca", name: "Manifesto branco" },
   { id: "aquarela", name: "Aquarela" },
+  { id: "aquarela-editorial", name: "Aquarela editorial" },
 ] as const;
 
 const kineticWords = ["Sonhar", "Acreditar", "Realizar", "Celebrar"] as const;
@@ -137,6 +138,18 @@ function EditorialPhoto({ index, className = "" }: { index: number; className?: 
   );
 }
 
+function WatercolorPainting({ className = "" }: { className?: string }) {
+  return (
+    <div className={`watercolor-painting ${className}`} aria-hidden="true">
+      <div className="watercolor-painting__base" />
+      <div className="watercolor-painting__brushes">
+        {Array.from({ length: 14 }).map((_, index) => <i key={index} />)}
+      </div>
+      <div className="watercolor-painting__wash" />
+    </div>
+  );
+}
+
 export default function Home() {
   const [leaving, setLeaving] = useState(false);
   const [themeIndex, setThemeIndex] = useState(0);
@@ -156,7 +169,8 @@ export default function Home() {
   const isBloom = theme.id === "florescer";
   const isNarrative = theme.id === "narrativa" || theme.id === "narrativa-branca";
   const isWhiteNarrative = theme.id === "narrativa-branca";
-  const isWatercolor = theme.id === "aquarela";
+  const isWatercolorEditorial = theme.id === "aquarela-editorial";
+  const isWatercolor = theme.id === "aquarela" || isWatercolorEditorial;
 
   const moveGarden = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch" || !heroRef.current) return;
@@ -233,7 +247,7 @@ export default function Home() {
       const startY = window.scrollY;
       const destinationY = target.getBoundingClientRect().top + window.scrollY;
       const startTime = performance.now();
-      const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 1 : 3200;
+      const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 1 : isWatercolorEditorial ? 4600 : 3700;
       setLeaving(true);
       const animate = (time: number) => {
         const progress = Math.min(1, (time - startTime) / duration);
@@ -341,7 +355,7 @@ export default function Home() {
             <small>Trocar cenário</small>
             <strong aria-live="polite">{theme.name}</strong>
           </span>
-          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 09</span>
+          <span className="theme-switcher__count" aria-hidden="true">{String(themeIndex + 1).padStart(2, "0")} / 10</span>
         </button>
 
         <div className="hero__center">
@@ -442,10 +456,24 @@ export default function Home() {
         </>
       ) : (
         <>
-          {isWatercolor ? (
+          {isWatercolorEditorial ? (
+            <>
+              <section id="proxima" className="next-section next-section--aquarela" aria-labelledby="next-title">
+                <div className="next-section__ornament" aria-hidden="true"><i /><span /><i /></div>
+                <p>O começo de uma história</p>
+                <h2 id="next-title">Bem-vindo ao<br /><em>La Casa</em></h2>
+                <p className="next-section__note">Cada celebração encontra aqui um jeito único de florescer.</p>
+                <button type="button" onClick={() => document.querySelector("#aquarela-reveal")?.scrollIntoView({ behavior: "smooth" })}>Conheça nosso espaço ↓</button>
+              </section>
+              <section id="aquarela-reveal" ref={watercolorWelcomeRef} className={`watercolor-editorial-reveal${watercolorWelcomeVisible ? " is-visible" : ""}`} aria-label="La Casa em aquarela">
+                <div className="watercolor-editorial-reveal__intro"><span>Nosso espaço</span><i /></div>
+                <WatercolorPainting className="watercolor-painting--framed" />
+                <p className="watercolor-editorial-reveal__caption">Um jardim para celebrar histórias inesquecíveis.</p>
+              </section>
+            </>
+          ) : isWatercolor ? (
             <section id="proxima" ref={watercolorWelcomeRef} className={`watercolor-welcome${watercolorWelcomeVisible ? " is-visible" : ""}`} aria-labelledby="next-title">
-              <div className="watercolor-welcome__painting" aria-hidden="true" />
-              <div className="watercolor-welcome__paper" aria-hidden="true" />
+              <WatercolorPainting className="watercolor-painting--welcome" />
               <div className="watercolor-welcome__content">
                 <p>Um espaço para florescer</p>
                 <h2 id="next-title">Bem-vindo ao<br /><em>La Casa</em></h2>
