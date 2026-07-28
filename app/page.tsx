@@ -49,6 +49,7 @@ const visualThemes = [
   { id: "natural", name: "Jardim natural" },
   { id: "narrativa", name: "Nova narrativa" },
   { id: "narrativa-branca", name: "Manifesto branco" },
+  { id: "aquarela", name: "Aquarela" },
 ] as const;
 
 const kineticWords = ["Sonhar", "Acreditar", "Realizar", "Celebrar"] as const;
@@ -141,9 +142,12 @@ export default function Home() {
   const [themeIndex, setThemeIndex] = useState(0);
   const [bloomProgress, setBloomProgress] = useState(0);
   const [typeProgress, setTypeProgress] = useState(0);
+  const [watercolorWelcomeVisible, setWatercolorWelcomeVisible] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
   const typeSectionRef = useRef<HTMLElement>(null);
+  const watercolorWelcomeRef = useRef<HTMLElement>(null);
   const typeFrameRef = useRef<number | null>(null);
+  const watercolorExitFrameRef = useRef<number | null>(null);
   const spaceCarouselRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number | null>(null);
   const bloomRef = useRef(0);
@@ -152,6 +156,7 @@ export default function Home() {
   const isBloom = theme.id === "florescer";
   const isNarrative = theme.id === "narrativa" || theme.id === "narrativa-branca";
   const isWhiteNarrative = theme.id === "narrativa-branca";
+  const isWatercolor = theme.id === "aquarela";
 
   const moveGarden = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch" || !heroRef.current) return;
@@ -167,7 +172,20 @@ export default function Home() {
   useEffect(() => () => {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     if (typeFrameRef.current) cancelAnimationFrame(typeFrameRef.current);
+    if (watercolorExitFrameRef.current) cancelAnimationFrame(watercolorExitFrameRef.current);
   }, []);
+
+  useEffect(() => {
+    setWatercolorWelcomeVisible(false);
+    if (!isWatercolor) return;
+    const section = watercolorWelcomeRef.current;
+    if (!section) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setWatercolorWelcomeVisible(true);
+    }, { threshold: .24 });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [isWatercolor]);
 
   useEffect(() => {
     if (!isNarrative) return;
@@ -208,6 +226,31 @@ export default function Home() {
 
   const enter = () => {
     if (leaving) return;
+    if (isWatercolor) {
+      const target = document.querySelector<HTMLElement>("#proxima");
+      const hero = heroRef.current;
+      if (!target || !hero) return;
+      const startY = window.scrollY;
+      const destinationY = target.getBoundingClientRect().top + window.scrollY;
+      const startTime = performance.now();
+      const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 1 : 3200;
+      setLeaving(true);
+      const animate = (time: number) => {
+        const progress = Math.min(1, (time - startTime) / duration);
+        const eased = progress < .5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        hero.style.setProperty("--aquarela-exit", progress.toFixed(3));
+        window.scrollTo(0, startY + (destinationY - startY) * eased);
+        if (progress < 1) watercolorExitFrameRef.current = requestAnimationFrame(animate);
+        else {
+          watercolorExitFrameRef.current = null;
+          setLeaving(false);
+        }
+      };
+      watercolorExitFrameRef.current = requestAnimationFrame(animate);
+      return;
+    }
     setLeaving(true);
     window.setTimeout(() => {
       document.querySelector("#proxima")?.scrollIntoView({ behavior: "smooth" });
@@ -257,6 +300,7 @@ export default function Home() {
       "--floral-herbario": `url("${assetBase}/floral-herbario.webp")`,
       "--floral-moldura": `url("${assetBase}/floral-moldura.webp")`,
       "--floral-campo": `url("${assetBase}/floral-campo.webp")`,
+      "--la-casa-aquarela": `url("${assetBase}/la-casa-aquarela.jpg")`,
     } as CSSProperties}>
       <section
         ref={heroRef}
@@ -297,7 +341,7 @@ export default function Home() {
             <small>Trocar cenário</small>
             <strong aria-live="polite">{theme.name}</strong>
           </span>
-          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 08</span>
+          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 09</span>
         </button>
 
         <div className="hero__center">
@@ -398,13 +442,25 @@ export default function Home() {
         </>
       ) : (
         <>
-          <section id="proxima" className="next-section" aria-labelledby="next-title">
-            <div className="next-section__ornament" aria-hidden="true"><i /><span /><i /></div>
-            <p>O começo de uma história</p>
-            <h2 id="next-title">Bem-vindo à<br /><em>La Casa</em></h2>
-            <p className="next-section__note">Cada celebração encontra aqui um jeito único de florescer.</p>
-            <button type="button" onClick={() => document.querySelector("#momentos")?.scrollIntoView({ behavior: "smooth" })}>Conheça nossas histórias ↓</button>
-          </section>
+          {isWatercolor ? (
+            <section id="proxima" ref={watercolorWelcomeRef} className={`watercolor-welcome${watercolorWelcomeVisible ? " is-visible" : ""}`} aria-labelledby="next-title">
+              <div className="watercolor-welcome__painting" aria-hidden="true" />
+              <div className="watercolor-welcome__paper" aria-hidden="true" />
+              <div className="watercolor-welcome__content">
+                <p>Um espaço para florescer</p>
+                <h2 id="next-title">Bem-vindo ao<br /><em>La Casa</em></h2>
+                <button type="button" onClick={() => document.querySelector("#momentos")?.scrollIntoView({ behavior: "smooth" })}>Conheça nosso espaço ↓</button>
+              </div>
+            </section>
+          ) : (
+            <section id="proxima" className="next-section" aria-labelledby="next-title">
+              <div className="next-section__ornament" aria-hidden="true"><i /><span /><i /></div>
+              <p>O começo de uma história</p>
+              <h2 id="next-title">Bem-vindo à<br /><em>La Casa</em></h2>
+              <p className="next-section__note">Cada celebração encontra aqui um jeito único de florescer.</p>
+              <button type="button" onClick={() => document.querySelector("#momentos")?.scrollIntoView({ behavior: "smooth" })}>Conheça nossas histórias ↓</button>
+            </section>
+          )}
 
           <section id="momentos" className="editorial-section" aria-labelledby="editorial-title">
             <header className="editorial-header"><p><span /> La Casa por dentro</p><div><h2 id="editorial-title">Histórias<br /><em>vividas aqui</em></h2><p>Festas, encontros e detalhes que transformam cada noite em uma memória particular.</p></div></header>
