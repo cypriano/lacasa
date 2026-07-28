@@ -47,7 +47,11 @@ const visualThemes = [
   { id: "campo", name: "Campo de flores" },
   { id: "florescer", name: "Florescer mágico" },
   { id: "natural", name: "Jardim natural" },
+  { id: "narrativa", name: "Nova narrativa" },
 ] as const;
+
+const kineticWords = ["Sonhar", "Acreditar", "Realizar", "Celebrar"] as const;
+const spacePhotoIndices = [17, 3, 5, 8, 0, 10] as const;
 
 const galleryPhotos = [
   { src: "/gallery/01.webp", label: "Casamentos", alt: "Casal em meio a uma instalação floral iluminada" },
@@ -128,12 +132,17 @@ export default function Home() {
   const [leaving, setLeaving] = useState(false);
   const [themeIndex, setThemeIndex] = useState(0);
   const [bloomProgress, setBloomProgress] = useState(0);
+  const [typeProgress, setTypeProgress] = useState(0);
   const heroRef = useRef<HTMLElement>(null);
+  const typeSectionRef = useRef<HTMLElement>(null);
+  const typeFrameRef = useRef<number | null>(null);
+  const spaceCarouselRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number | null>(null);
   const bloomRef = useRef(0);
   const dragRef = useRef<{ y: number; progress: number; pointerId: number } | null>(null);
   const theme = visualThemes[themeIndex];
   const isBloom = theme.id === "florescer";
+  const isNarrative = theme.id === "narrativa";
 
   const moveGarden = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch" || !heroRef.current) return;
@@ -148,7 +157,29 @@ export default function Home() {
 
   useEffect(() => () => {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    if (typeFrameRef.current) cancelAnimationFrame(typeFrameRef.current);
   }, []);
+
+  useEffect(() => {
+    if (!isNarrative) return;
+    const updateProgress = () => {
+      if (typeFrameRef.current) cancelAnimationFrame(typeFrameRef.current);
+      typeFrameRef.current = requestAnimationFrame(() => {
+        const section = typeSectionRef.current;
+        if (!section) return;
+        const rect = section.getBoundingClientRect();
+        const distance = Math.max(1, rect.height - window.innerHeight);
+        setTypeProgress(Math.min(1, Math.max(0, -rect.top / distance)));
+      });
+    };
+    updateProgress();
+    window.addEventListener("scroll", updateProgress, { passive: true });
+    window.addEventListener("resize", updateProgress);
+    return () => {
+      window.removeEventListener("scroll", updateProgress);
+      window.removeEventListener("resize", updateProgress);
+    };
+  }, [isNarrative]);
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -206,6 +237,12 @@ export default function Home() {
     if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
   };
 
+  const scrollSpaceCarousel = (direction: 1 | -1) => {
+    const carousel = spaceCarouselRef.current;
+    if (!carousel) return;
+    carousel.scrollBy({ left: carousel.clientWidth * .78 * direction, behavior: "smooth" });
+  };
+
   return (
     <main>
       <section
@@ -247,13 +284,13 @@ export default function Home() {
             <small>Trocar cenário</small>
             <strong aria-live="polite">{theme.name}</strong>
           </span>
-          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 06</span>
+          <span className="theme-switcher__count" aria-hidden="true">0{themeIndex + 1} / 07</span>
         </button>
 
         <div className="hero__center">
-          <p className="eyebrow"><span /> {isBloom ? "Quando a beleza encontra morada" : "Um lugar para sentir"} <span /></p>
+          <p className="eyebrow"><span /> {isNarrative ? "Um lugar para celebrar" : isBloom ? "Quando a beleza encontra morada" : "Um lugar para sentir"} <span /></p>
           <h1 id="la-casa-title">La Casa</h1>
-          <p className="subtitle">{isBloom ? "há lugares que não se visitam — se sentem" : "flores • encontros • delicadezas"}</p>
+          <p className="subtitle">{isNarrative ? "Sonhar • Acreditar • Realizar" : isBloom ? "há lugares que não se visitam — se sentem" : "flores • encontros • delicadezas"}</p>
           <button className="enter-button" type="button" onClick={enter} aria-label="Entrar no site La Casa" disabled={isBloom && bloomProgress < .9}>
             <span>Entrar</span>
             <i aria-hidden="true">↓</i>
@@ -272,79 +309,94 @@ export default function Home() {
         <p className="scroll-hint" aria-hidden="true">descubra</p>
       </section>
 
-      <section id="proxima" className="next-section" aria-labelledby="next-title">
-        <div className="next-section__ornament" aria-hidden="true"><i /><span /><i /></div>
-        <p>O começo de uma história</p>
-        <h2 id="next-title">Bem-vindo à<br /><em>La Casa</em></h2>
-        <p className="next-section__note">Cada celebração encontra aqui um jeito único de florescer.</p>
-        <button type="button" onClick={() => document.querySelector("#momentos")?.scrollIntoView({ behavior: "smooth" })}>Conheça nossas histórias ↓</button>
-      </section>
+      {isNarrative ? (
+        <>
+          <section id="proxima" className="next-section next-section--narrative" aria-labelledby="next-title">
+            <div className="next-section__ornament" aria-hidden="true"><i /><span /><i /></div>
+            <p>O começo de uma história</p>
+            <h2 id="next-title">Bem-vindo ao<br /><em>La Casa</em></h2>
+            <p className="next-section__note">Cada celebração e cada evento encontram aqui um espaço único para florescer.</p>
+            <button type="button" onClick={() => document.querySelector("#manifesto")?.scrollIntoView({ behavior: "smooth" })}>Conheça nosso espaço ↓</button>
+          </section>
 
-      <section id="momentos" className="editorial-section" aria-labelledby="editorial-title">
-        <header className="editorial-header">
-          <p><span /> La Casa por dentro</p>
-          <div>
-            <h2 id="editorial-title">Histórias<br /><em>vividas aqui</em></h2>
-            <p>Festas, encontros e detalhes que transformam cada noite em uma memória particular.</p>
-          </div>
-        </header>
+          <section id="manifesto" ref={typeSectionRef} className="kinetic-section" aria-label="Sonhar, acreditar, realizar e celebrar">
+            <div className="kinetic-sticky">
+              <div className="kinetic-index"><span>Manifesto</span><i>{String(Math.round(typeProgress * 100)).padStart(2, "0")}</i></div>
+              <b className="kinetic-ampersand" aria-hidden="true" style={{ transform: `translate(-50%, -50%) rotate(${typeProgress * 80 - 40}deg)` }}>&amp;</b>
+              <div className="kinetic-words" aria-hidden="true">
+                {kineticWords.map((word, index) => {
+                  const midpoint = .12 + index * .25;
+                  const distance = typeProgress - midpoint;
+                  const opacity = Math.max(.12, 1 - Math.abs(distance) * 3.7);
+                  const direction = index % 2 === 0 ? 1 : -1;
+                  return (
+                    <span key={word} style={{
+                      opacity,
+                      transform: `translateX(${distance * direction * 125}vw) scale(${.92 + opacity * .08})`,
+                    }}>{word}{index === 3 ? "." : ""}</span>
+                  );
+                })}
+              </div>
+              <p className="kinetic-hint">Continue para descobrir <span>↓</span></p>
+            </div>
+          </section>
 
-        <EditorialPhoto index={17} className="editorial-photo--venue" />
+          <section id="espaco" className="space-carousel-section" aria-labelledby="space-title">
+            <header className="space-carousel-header">
+              <div><p>La Casa Cerimonial</p><h2 id="space-title">Um espaço,<br /><em>muitas histórias.</em></h2></div>
+              <div className="space-carousel-arrows">
+                <button type="button" onClick={() => scrollSpaceCarousel(-1)} aria-label="Voltar nas imagens">←</button>
+                <button type="button" onClick={() => scrollSpaceCarousel(1)} aria-label="Avançar nas imagens">→</button>
+              </div>
+            </header>
+            <div className="space-carousel" ref={spaceCarouselRef}>
+              {spacePhotoIndices.map((photoIndex, index) => {
+                const photo = galleryPhotos[photoIndex];
+                return (
+                  <figure key={photo.src}>
+                    <img src={photo.src} alt={photo.alt} loading="lazy" decoding="async" />
+                    <figcaption><span>{photo.label}</span><i>0{index + 1} / 06</i></figcaption>
+                  </figure>
+                );
+              })}
+            </div>
+          </section>
 
-        <div className="editorial-spread editorial-spread--opening">
-          <EditorialPhoto index={0} />
-          <div className="editorial-spread__aside">
-            <p>Uma casa feita para celebrar o que é único.</p>
-            <EditorialPhoto index={1} />
-          </div>
-        </div>
+          <section className="memorable-section" aria-labelledby="memorable-title">
+            <figure><img src={galleryPhotos[17].src} alt={galleryPhotos[17].alt} loading="lazy" decoding="async" /></figure>
+            <div>
+              <p><span /> La Casa por inteiro</p>
+              <h2 id="memorable-title">Experiências<br /><em>Memoráveis</em></h2>
+              <p className="memorable-copy">Cada detalhe do La Casa Cerimonial é pensado para criar uma experiência inesquecível do início ao fim. E tudo começa no momento em que os convidados chegam. Na entrada principal, uma elegante fonte de água dá as boas-vindas, envolvendo-os em uma atmosfera acolhedora ao som suave das águas em movimento. Essa é a primeira impressão de um evento cuidadosamente planejado, onde cada elemento contribui para um ambiente sofisticado e memorável.</p>
+            </div>
+          </section>
+        </>
+      ) : (
+        <>
+          <section id="proxima" className="next-section" aria-labelledby="next-title">
+            <div className="next-section__ornament" aria-hidden="true"><i /><span /><i /></div>
+            <p>O começo de uma história</p>
+            <h2 id="next-title">Bem-vindo à<br /><em>La Casa</em></h2>
+            <p className="next-section__note">Cada celebração encontra aqui um jeito único de florescer.</p>
+            <button type="button" onClick={() => document.querySelector("#momentos")?.scrollIntoView({ behavior: "smooth" })}>Conheça nossas histórias ↓</button>
+          </section>
 
-        <EditorialPhoto index={3} className="editorial-photo--panorama" />
-
-        <div className="editorial-spread editorial-spread--details">
-          <EditorialPhoto index={4} />
-          <EditorialPhoto index={5} />
-        </div>
-
-        <div className="editorial-statement">
-          <p>Flores, luz e movimento</p>
-          <h3>Cada detalhe compõe<br />uma <em>atmosfera.</em></h3>
-        </div>
-
-        <div className="editorial-triptych">
-          <EditorialPhoto index={6} />
-          <EditorialPhoto index={7} />
-          <EditorialPhoto index={8} />
-        </div>
-
-        <EditorialPhoto index={2} className="editorial-photo--cinema" />
-
-        <div className="editorial-spread editorial-spread--portraits">
-          <EditorialPhoto index={9} />
-          <EditorialPhoto index={11} />
-          <EditorialPhoto index={12} />
-        </div>
-
-        <div className="editorial-spread editorial-spread--quiet">
-          <EditorialPhoto index={14} />
-          <div className="editorial-spread__aside">
-            <blockquote>“Um lugar onde cada história encontra seu próprio cenário.”</blockquote>
-            <EditorialPhoto index={15} />
-          </div>
-        </div>
-
-        <div className="editorial-night">
-          <header><span>Noite</span><h3>Quando a casa<br /><em>ganha outra luz</em></h3></header>
-          <EditorialPhoto index={10} />
-          <EditorialPhoto index={13} />
-        </div>
-
-        <div className="editorial-finale">
-          <EditorialPhoto index={16} />
-          <EditorialPhoto index={18} />
-          <p>Memórias para levar<br />muito além da festa.</p>
-        </div>
-      </section>
+          <section id="momentos" className="editorial-section" aria-labelledby="editorial-title">
+            <header className="editorial-header"><p><span /> La Casa por dentro</p><div><h2 id="editorial-title">Histórias<br /><em>vividas aqui</em></h2><p>Festas, encontros e detalhes que transformam cada noite em uma memória particular.</p></div></header>
+            <EditorialPhoto index={17} className="editorial-photo--venue" />
+            <div className="editorial-spread editorial-spread--opening"><EditorialPhoto index={0} /><div className="editorial-spread__aside"><p>Uma casa feita para celebrar o que é único.</p><EditorialPhoto index={1} /></div></div>
+            <EditorialPhoto index={3} className="editorial-photo--panorama" />
+            <div className="editorial-spread editorial-spread--details"><EditorialPhoto index={4} /><EditorialPhoto index={5} /></div>
+            <div className="editorial-statement"><p>Flores, luz e movimento</p><h3>Cada detalhe compõe<br />uma <em>atmosfera.</em></h3></div>
+            <div className="editorial-triptych"><EditorialPhoto index={6} /><EditorialPhoto index={7} /><EditorialPhoto index={8} /></div>
+            <EditorialPhoto index={2} className="editorial-photo--cinema" />
+            <div className="editorial-spread editorial-spread--portraits"><EditorialPhoto index={9} /><EditorialPhoto index={11} /><EditorialPhoto index={12} /></div>
+            <div className="editorial-spread editorial-spread--quiet"><EditorialPhoto index={14} /><div className="editorial-spread__aside"><blockquote>“Um lugar onde cada história encontra seu próprio cenário.”</blockquote><EditorialPhoto index={15} /></div></div>
+            <div className="editorial-night"><header><span>Noite</span><h3>Quando a casa<br /><em>ganha outra luz</em></h3></header><EditorialPhoto index={10} /><EditorialPhoto index={13} /></div>
+            <div className="editorial-finale"><EditorialPhoto index={16} /><EditorialPhoto index={18} /><p>Memórias para levar<br />muito além da festa.</p></div>
+          </section>
+        </>
+      )}
     </main>
   );
 }
