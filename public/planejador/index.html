@@ -529,16 +529,23 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   :root{--ink:#171714;--mut:#80786c;--line:#d9d1c5;--bg:#e9e5dd;--panel:#f8f5ef;
     --brass:#9a7442;--brass-2:#bd9b67;--sel:#9a7442;--black:#131312}
   body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;background:var(--bg);font-size:12px}
-  header{height:68px;padding:0 22px;gap:24px;background:var(--black);border:0;box-shadow:0 8px 30px rgba(19,19,18,.14);z-index:5}
-  .brand{display:flex;flex-direction:column;gap:3px;min-width:236px;color:#fff;letter-spacing:0;text-transform:none}
-  .brand b{font-family:"Bodoni 72",Didot,"Iowan Old Style",Georgia,serif;font-size:21px;font-weight:400;letter-spacing:.16em}
-  .brand span{color:#bca47f;font-size:8px;letter-spacing:.27em;text-transform:uppercase}
-  #eventName{color:#f8f5ef;border-bottom-color:#48453f;font-size:14px;max-width:370px;padding:8px 2px}
-  #eventName::placeholder{color:#837e76}#eventName:focus{border-bottom-color:#c4a472}
-  header .btn{color:#d9d4cc;background:transparent;border-color:#46423d;border-radius:2px;padding:8px 13px}
-  header .btn:hover{color:#fff;background:#25231f;border-color:#af8f60}
-  header .btn.primary{color:#171714;background:#f6f1e8;border-color:#f6f1e8;padding-inline:19px}
-  header select.btn{background:#171714}
+  header{height:92px;padding:0 28px;gap:30px;background:#fbfaf7;border:0;border-bottom:1px solid #d9d5ce;box-shadow:0 10px 34px rgba(20,20,18,.07);z-index:5}
+  .brand{display:flex;align-items:center;gap:18px;min-width:335px;color:#171714;letter-spacing:0;text-transform:none}
+  .brand-logo{width:112px;height:54px;object-fit:contain;display:block}
+  .brand-copy{display:flex;flex-direction:column;gap:6px;padding-left:18px;border-left:1px solid #d9d5ce;white-space:nowrap}
+  .brand-copy b{font-size:12px;line-height:1;font-weight:500;letter-spacing:.02em}
+  .brand-copy span{color:#77736c;font-size:8px;line-height:1;letter-spacing:.2em;text-transform:uppercase}
+  .project-field{display:flex;flex-direction:column;gap:8px;flex:1;max-width:430px;min-width:190px;padding:0 2px}
+  .project-field label{font-size:8px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8a867f}
+  #eventName{width:100%;max-width:none;min-width:0;color:#171714;border:0;border-bottom:1px solid #c9c5be;font-size:16px;font-weight:400;padding:0 0 9px}
+  #eventName::placeholder{color:#aaa69e}#eventName:focus{border-bottom-color:#171714}
+  .bar-actions{gap:0;border:1px solid #d4d0c8;border-radius:2px;overflow:hidden;background:#fff}
+  header .btn{height:42px;color:#403e39;background:#fff;border:0;border-right:1px solid #dfdbd4;border-radius:0;padding:0 16px;font-size:11px;font-weight:500;letter-spacing:.02em}
+  header .btn:hover{color:#111;background:#f1efea;border-color:#dfdbd4}
+  header .btn.primary{color:#fff;background:#171714;border-color:#171714;padding-inline:23px}
+  header .btn.primary:hover{color:#fff;background:#34342f}
+  header select.btn{min-width:154px;color:#504d47;background:#fff;padding:0 30px 0 14px}
+  header .bar-actions .btn:last-child{border-right:0}
   aside{width:300px;background:var(--panel);border-right:1px solid #d3cabc;box-shadow:8px 0 28px rgba(42,35,27,.06)}
   aside::-webkit-scrollbar{width:5px}aside::-webkit-scrollbar-thumb{background:#c6bcac;border-radius:5px}
   aside h2{padding:19px 16px 9px;color:#8a8072;font-size:8px;letter-spacing:.28em}
@@ -559,14 +566,21 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   .model-signature{position:absolute;right:18px;top:18px;padding:10px 14px;background:rgba(19,19,18,.9);border:1px solid #4d463d;color:#f4eee4;box-shadow:0 10px 28px rgba(20,17,13,.18);pointer-events:none;backdrop-filter:blur(12px)}
   .model-signature span{display:block;font-size:7px;letter-spacing:.23em;text-transform:uppercase;color:#aa9c8a}
   .model-signature b{display:block;margin-top:3px;font-family:"Bodoni 72",Didot,Georgia,serif;font-size:14px;font-weight:400;color:#d1b17d}
-  @media(max-width:1050px){aside{width:255px}.brand{min-width:190px}.model-signature{display:none}}
+  @media(max-width:1180px){header{gap:18px;padding-inline:18px}.brand{min-width:250px}.brand-logo{width:92px}.brand-copy{display:none}header .btn{padding-inline:12px}header select.btn{min-width:132px}.model-signature{display:none}}
+  @media(max-width:900px){header{height:80px}.brand{min-width:105px}.project-field{min-width:150px}.bar-actions{overflow:visible;border:0;gap:4px;background:transparent}header .btn{border:1px solid #d4d0c8}header select.btn{display:none}aside{width:220px}}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="brand"><b>LA CASA</b><span>Atelier de layouts · coleção V14</span></div>
-  <input id="eventName" placeholder="Nome do evento" />
+  <div class="brand">
+    <img class="brand-logo" id="brandLogo" alt="La Casa Cerimonial">
+    <div class="brand-copy"><b>Planejador de eventos</b><span>Coleção V14 · ambiente profissional</span></div>
+  </div>
+  <div class="project-field">
+    <label for="eventName">Nome do projeto</label>
+    <input id="eventName" placeholder="Casamento · cliente · data" />
+  </div>
   <div class="bar-actions">
     <button class="btn" id="btnOpen">Abrir</button>
     <button class="btn" id="btnSave">Salvar</button>
@@ -578,6 +592,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   </div>
   <input type="file" id="fileOpen" accept=".json" hidden>
 </header>
+<script>document.addEventListener('DOMContentLoaded',()=>{const logo=document.getElementById('brandLogo');if(logo&&typeof LOGO_SVG_B64!=='undefined')logo.src='data:image/svg+xml;base64,'+LOGO_SVG_B64;});</script>
 
 <main>
   <aside>
