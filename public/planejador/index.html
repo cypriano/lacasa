@@ -725,6 +725,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <button class="btn" id="btnRotR">girar ⟳</button>
         <button class="btn" id="btnDup">duplicar</button>
         <button class="btn" id="btnDel">remover</button>
+        <button class="btn" id="btnGroup">agrupar</button>
+        <button class="btn" id="btnUngroup">desagrupar</button>
       </div>
       <div class="len-row" id="lenRow" style="display:none">
         Comprimento <button class="btn" id="lenMinus">−0,5 m</button>
@@ -732,7 +734,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <button class="btn" id="lenPlus">+0,5 m</button>
       </div>
       <div id="optRows"></div>
-      <p class="hint">R gira · Ctrl+D duplica · Delete remove · setas movem com precisão.</p>
+      <p class="hint">Shift seleciona vários · Ctrl+G agrupa · R gira · Ctrl+D duplica.</p>
     </div>
   </aside>
 </main>
@@ -837,6 +839,7 @@ const CATALOG = {
   vaso:     {nome:'Vaso de flores',      seats:0, decor:true},
   vasoP:    {nome:'Vaso pequeno (mesa)', seats:0, decor:true},
   vasoG:    {nome:'Arranjo de chão',     seats:0, decor:true},
+  cerejeira:{nome:'Cerejeira em cúpula', seats:0, decor:true},
   arco:     {nome:'Arco de flores',      seats:0, decor:true},
   painel:   {nome:'Painel de flores',    seats:0, decor:true},
   pendente: {nome:'Pendente floral (teto)',seats:0, decor:true},
@@ -855,7 +858,7 @@ const GRUPOS = {palMesas:['mesa8','mesa4','mesaq4','bistro','redonda','noivos'],
                 palAssentos:['cadeira','cadeira4','luis16','fileira','banqueta','sofa','puff','puffRect'],
                 palEstrutura:['passarela'],
                 palBuffet:['mesaripada','mesaripadaP','apoiofina','bolo','dotricas','bolo3'],
-                palDecor:['vaso','vasoP','vasoG','vasoceramica','vasotorre','pendente'],
+                palDecor:['vaso','vasoP','vasoG','cerejeira','vasoceramica','vasotorre','pendente'],
                 palCenario:['arco','portalflor','painel','lampadas','vela','trilhavelas'],
                 palPins:['namePin']};
 
@@ -1028,7 +1031,7 @@ function svgFor(el){
   if(t==='cadeira'){chairSvg(s,0,0,0);
     s.push(`<rect class="halo" x="${-m(0.3)}" y="${-m(0.35)}" width="${m(0.6)}" height="${m(0.7)}"/>`);}
   if(t==='fileira'){const gap=m(0.5),n=6,tot=(n-1)*gap;
-    for(let i=0;i<n;i++)chairSvg(s,-tot/2+i*gap,0,0);
+    for(let i=0;i<n;i++)chairSvg(s,-tot/2+i*gap,0,0,'encosto');
     s.push(`<rect class="halo" x="${-tot/2-m(0.3)}" y="${-m(0.35)}" width="${tot+m(0.6)}" height="${m(0.7)}"/>`);}
   if(t==='banqueta'){const R=m(0.175);
     if(elStyle==='flor')s.push(`<circle class="petal" r="${R}"/>`);
@@ -1084,6 +1087,15 @@ function svgFor(el){
       s.push(`<circle fill="${pal[i%3]}" stroke="#8a6d34" stroke-width=".5" r="${m(0.09)}" cx="${Math.cos(a)*m(0.22)}" cy="${Math.sin(a)*m(0.22)}"/>`);}
     s.push(`<circle class="core" r="${m(0.13)}"/>`);
     s.push(`<circle class="halo" r="${m(0.36)+4}"/>`);}
+  if(t==='cerejeira'){
+    const tr=el.tree||{height:3.2,pot:.65,trunk:2.1,canopy:2.8},R=m(tr.canopy/2),pot=m(tr.pot/2);
+    s.push(`<circle fill="#886451" stroke="#5f4538" stroke-width="1" r="${pot}"/><circle fill="#6f4b36" r="${m(.09)}"/>`);
+    for(let i=0;i<12;i++){const a=i*Math.PI*2/12,r=R*(.46+(i%3)*.16);
+      s.push(`<line x1="0" y1="0" x2="${Math.cos(a)*r}" y2="${Math.sin(a)*r}" stroke="#75503e" stroke-width="${m(.035)}" stroke-linecap="round"/>`);}
+    const pink=['#f5d7df','#efbccb','#e8a9bb','#f8e4e9'];
+    for(let i=0;i<24;i++){const a=i*2.399963,r=R*(.25+.68*((i%7)/6));
+      s.push(`<circle cx="${Math.cos(a)*r}" cy="${Math.sin(a)*r}" r="${m(.12+(i%3)*.025)}" fill="${pink[i%pink.length]}" stroke="#bf8797" stroke-width=".45" opacity=".94"/>`);}
+    s.push(`<circle class="halo" r="${R+m(.18)}"/>`);}
   if(t==='arco'){
     s.push(`<line class="toalha" x1="${-m(1.0)}" y1="0" x2="${m(1.0)}" y2="0"/>`);
     for(const sx of [-1,1])s.push(`<circle class="core" r="${m(0.16)}" cx="${sx*m(1.0)}"/>`);
@@ -1162,7 +1174,7 @@ function chairCv(ctx,x,y,ang,kind){
     ctx.beginPath();ctx.arc(0,0,m(0.17),0,7);ctx.fill();ctx.stroke();
     ctx.restore();return;
   }
-  if(elStyle==='det'){
+  if(elStyle==='det'||kind==='encosto'){
     ctx.fillStyle='rgba(168,133,63,.32)';
     ctx.beginPath();ctx.roundRect(-cr,-cr,cr*2,cr*2,cr*0.3);ctx.fill();ctx.stroke();
     ctx.fillStyle='rgba(138,109,52,.6)';
@@ -1225,6 +1237,13 @@ function drawOnCanvas(ctx, el){
   if(t==='vasoG'){ctx.fillStyle='rgba(168,133,63,.38)';
     for(let i=0;i<8;i++){const a=i*Math.PI/4;
       ctx.beginPath();ctx.arc(Math.cos(a)*m(0.22),Math.sin(a)*m(0.22),m(0.09),0,7);ctx.fill();ctx.stroke();}}
+  if(t==='cerejeira'){
+    const tr=el.tree||{height:3.2,pot:.65,trunk:2.1,canopy:2.8},R=m(tr.canopy/2),pot=m(tr.pot/2);
+    ctx.fillStyle='#886451';ctx.beginPath();ctx.arc(0,0,pot,0,7);ctx.fill();ctx.stroke();
+    ctx.strokeStyle='#75503e';ctx.lineWidth=m(.035);
+    for(let i=0;i<12;i++){const a=i*Math.PI*2/12,r=R*(.46+(i%3)*.16);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);ctx.stroke();}
+    const pink=['#f5d7df','#efbccb','#e8a9bb','#f8e4e9'];
+    for(let i=0;i<24;i++){const a=i*2.399963,r=R*(.25+.68*((i%7)/6));ctx.fillStyle=pink[i%pink.length];ctx.beginPath();ctx.arc(Math.cos(a)*r,Math.sin(a)*r,m(.12+(i%3)*.025),0,7);ctx.fill();ctx.stroke();}}
   if(t==='arco'){ctx.fillStyle='rgba(168,133,63,.5)';
     for(const sx of [-1,1]){ctx.beginPath();ctx.arc(sx*m(1.0),0,m(0.16),0,7);ctx.fill();ctx.stroke();}
     ctx.save();ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(-m(1.0),0);ctx.lineTo(m(1.0),0);ctx.stroke();ctx.restore();}
@@ -1246,7 +1265,7 @@ function drawOnCanvas(ctx, el){
       ctx.strokeRect(-w/2+m(0.1),-h/2+m(0.08),w-m(0.2),h-m(0.16));ctx.restore();}
     if(t==='noivos'){chairCv(ctx,-w/4,h/2+m(0.25),180);chairCv(ctx,w/4,h/2+m(0.25),180);}}
   if(t==='cadeira')chairCv(ctx,0,0,0);
-  if(t==='fileira'){const g=m(0.5),tot=5*g;for(let i=0;i<6;i++)chairCv(ctx,-tot/2+i*g,0,0);}
+  if(t==='fileira'){const g=m(0.5),tot=5*g;for(let i=0;i<6;i++)chairCv(ctx,-tot/2+i*g,0,0,'encosto');}
   if(t==='banqueta'){const R=m(0.175);
     ctx.fillStyle=elStyle==='flor'?'rgba(168,133,63,.38)':'rgba(168,133,63,.18)';
     ctx.beginPath();ctx.arc(0,0,R,0,7);ctx.fill();ctx.stroke();ctx.fillStyle='rgba(138,109,52,.58)';rr(-R*.72,-R-m(.075),R*1.44,m(.075),m(.025));}
@@ -1341,7 +1360,7 @@ let labels = [
 let labelsOn=false, measOn=true;
 
 /* ===== estado ===== */
-let els=[]; let nextId=1;
+let els=[]; let nextId=1, nextGroup=1;
 let sel=new Set();            /* multi-seleção de elementos */
 let selMeas=null;             /* índice de medida selecionada */
 let placing=null, style='base';
@@ -1526,11 +1545,11 @@ function tulipa(cx,cy,hCol,C){
   out+=cil(cx,cy,m(0.032),hCol,0.04,C.madeiraT,C.madeiraL,C);
   return out;
 }
-function banquetaIso(el,lx,ly,C){
-  const q=P(el,lx,ly),back=P(el,lx,ly-m(.13));
+function banquetaIso(el,lx,ly,C,angle=0){
+  const q=P(el,lx,ly),ar=angle*Math.PI/180,ox=Math.sin(ar)*m(.13),oy=-Math.cos(ar)*m(.13);
   return sombra(q.x,q.y,m(.2),C)+tulipa(q.x,q.y,.66,C)+
     cil(q.x,q.y,m(.17),.05,.72,C.topo,C.lado,C)+
-    caixa(el,lx,ly-m(.13),m(.13),m(.025),0,.18,.78,C.madeiraT,C.madeiraL,C);
+    caixa(el,lx+ox,ly+oy,m(.13),m(.025),angle,.18,.78,C.madeiraT,C.madeiraL,C);
 }
 function florzinhas(cx,cy,z,r,n,C,cores){
   cores=cores||[C.rosa];
@@ -1543,20 +1562,20 @@ function florzinhas(cx,cy,z,r,n,C,cores){
 function isoSpriteFor(el){
   const C=isoCores(), t=el.type, s=[];
   const halo=(r)=>{const e=ER(r);s.push(`<ellipse class="halo" rx="${e.rx}" ry="${e.ry}"/>`);};
+  const depth=(pos)=>{const sorted=[...pos].sort((u,v)=>P(el,u[0],u[1]).y-P(el,v[0],v[1]).y);return [sorted.filter(p=>P(el,p[0],p[1]).y<0),sorted.filter(p=>P(el,p[0],p[1]).y>=0)];};
   if(t==='mesa8'||t==='redonda'){
     const d=dimsFor(el),R=roundRadius(el),H=d.height;s.push(sombra(0,0,R+m(.1),C));
     if(t==='mesa8'){const o=R+m(0.32), n=+getOpt(el,'seats','10'), kd=getOpt(el,'chair','encosto');
       const pos=[];for(let i=0;i<n;i++){const a=i*2*Math.PI/n;pos.push([Math.cos(a)*o,Math.sin(a)*o]);}
-      pos.sort((u,v)=>(u[0]+u[1])-(v[0]+v[1]));
-      const meio=Math.ceil(n/2);
-      for(const [lx,ly] of pos.slice(0,meio))s.push(cadeiraIso(el,lx,ly,C,kd));
+      const [atras,frente]=depth(pos);
+      for(const [lx,ly] of atras)s.push(cadeiraIso(el,lx,ly,C,kd));
       s.push(cil(0,0,m(0.07),Math.max(.2,H-.06),0,C.madeiraT,C.madeiraL,C));
       if(isoFinish==='real'){
         const e=ER(R*1.08),yT=-Math.max(.2,H-.06)*VZ();
         s.push(`<path d="M ${-e.rx} ${yT} q ${e.rx*0.2} ${0.42*VZ()} 0 ${0.46*VZ()} q ${e.rx*0.5} ${m(0.05)} ${e.rx} 0 q ${e.rx*0.28} ${-0.06*VZ()} ${e.rx*0.55} ${-0.13*VZ()} L ${e.rx} ${yT} A ${e.rx} ${e.ry} 0 0 0 ${-e.rx} ${yT} Z" fill="${C.branco}" stroke="${C.tr}" stroke-width=".7" opacity=".97"/>`);
         s.push(`<ellipse cx="0" cy="${yT-0.02*VZ()}" rx="${e.rx}" ry="${e.ry}" fill="${C.topo}" stroke="${C.tr}" stroke-width="${C.sw}"/>`);
       } else s.push(cil(0,0,R,0.06,Math.max(.2,H-.06),C.topo,C.lado,C));
-      for(const [lx,ly] of pos.slice(meio))s.push(cadeiraIso(el,lx,ly,C,kd));
+      for(const [lx,ly] of frente)s.push(cadeiraIso(el,lx,ly,C,kd));
     } else s.push(cil(0,0,m(0.07),Math.max(.2,H-.06),0,C.madeiraT,C.madeiraL,C),cil(0,0,R,0.06,Math.max(.2,H-.06),C.topo,C.lado,C));
     halo(R+m(.4));
   }
@@ -1564,27 +1583,26 @@ function isoSpriteFor(el){
     const d=dimsFor(el),R=roundRadius(el),H=d.height;s.push(sombra(0,0,R+m(.1),C));
     const o=R+m(0.32), pos=[],n=+getOpt(el,'seats','10');
     for(let i=0;i<n;i++){const a=i*2*Math.PI/n+Math.PI/4;pos.push([Math.cos(a)*o,Math.sin(a)*o]);}
-    pos.sort((u,v)=>(u[0]+u[1])-(v[0]+v[1]));
     const kd4=getOpt(el,'chair','encosto');
-    const mid=Math.ceil(n/2);for(const [lx,ly] of pos.slice(0,mid))s.push(cadeiraIso(el,lx,ly,C,kd4));
+    const [atras4,frente4]=depth(pos);for(const [lx,ly] of atras4)s.push(cadeiraIso(el,lx,ly,C,kd4));
     s.push(cil(0,0,m(0.07),Math.max(.2,H-.06),0,C.madeiraT,C.madeiraL,C));
     s.push(cil(0,0,R,0.06,Math.max(.2,H-.06),C.topo,C.lado,C));
-    for(const [lx,ly] of pos.slice(mid))s.push(cadeiraIso(el,lx,ly,C,kd4));
+    for(const [lx,ly] of frente4)s.push(cadeiraIso(el,lx,ly,C,kd4));
     halo(R+m(.4));
   }
   if(t==='mesaq4'){
     const d=dimsFor(el),len=d.length,wid=d.width,H=d.height,hw=len/2,hh=wid/2;s.push(sombra(0,0,m(Math.max(len,wid)/2+.2),C));
     const n=getOpt(el,'chairs','yes')==='no'?0:+getOpt(el,'seats','10');
     const cadPos=italianChairPositions(m(len),m(wid),n,m(.28));
-    cadPos.sort((u,v)=>(u[0]+u[1])-(v[0]+v[1]));
+    const [atrasQ,frenteQ]=depth(cadPos);
     const pernas=[[-hw+0.08,-hh+0.08],[hw-0.08,-hh+0.08],[-hw+0.08,hh-0.08],[hw-0.08,hh-0.08]]
       .map(([x,y])=>[m(x),m(y)]).sort((u,v)=>(u[0]+u[1])-(v[0]+v[1]));
     const kdq=getOpt(el,'chair','encosto');
-    const midq=Math.ceil(cadPos.length/2);for(const [lx,ly,a] of cadPos.slice(0,midq))s.push(cadeiraIso(el,lx,ly,C,kdq,a));
+    for(const [lx,ly,a] of atrasQ)s.push(cadeiraIso(el,lx,ly,C,kdq,a));
     for(const [lx,ly] of pernas){const q=P(el,lx,ly);
       s.push(cil(q.x,q.y,m(0.035),Math.max(.2,H-.06),0,C.madeiraT,C.madeiraL,C));}
     s.push(caixa(el,0,0,m(hw),m(hh),0,0.06,Math.max(.2,H-.06),C.topo,C.lado,C));
-    for(const [lx,ly,a] of cadPos.slice(midq))s.push(cadeiraIso(el,lx,ly,C,kdq,a));
+    for(const [lx,ly,a] of frenteQ)s.push(cadeiraIso(el,lx,ly,C,kdq,a));
     halo(m(Math.max(len,wid)/2+.55));
   }
   if(t==='customTable'){
@@ -1593,9 +1611,9 @@ function isoSpriteFor(el){
     if(c.shape==='round'){
       const R=m(Math.max(len,wid)/2),o=R+m(.32);for(let i=0;i<n;i++){const a=i*2*Math.PI/n;pos.push([Math.cos(a)*o,Math.sin(a)*o]);}
     }else for(const [x,y] of rectChairPositions(m(len),m(wid),n,m(.32)))pos.push([x,y]);
-    pos.sort((u,v)=>(u[0]+u[1])-(v[0]+v[1]));const mid=Math.ceil(pos.length/2);
+    const [atrasC,frenteC]=depth(pos);
     s.push(sombra(0,0,m(Math.max(len,wid)/2+.3),C));
-    for(const [x,y] of pos.slice(0,mid))s.push(cadeiraIso(el,x,y,C,getOpt(el,'chair','encosto')));
+    for(const [x,y] of atrasC)s.push(cadeiraIso(el,x,y,C,getOpt(el,'chair','encosto')));
     if(c.shape==='round'){
       s.push(cil(0,0,m(.07),Math.max(.2,h-.06),0,C.madeiraT,C.madeiraL,C));
       s.push(cil(0,0,m(Math.max(len,wid)/2),.06,Math.max(.2,h-.06),C.topo,C.lado,C));
@@ -1603,7 +1621,7 @@ function isoSpriteFor(el){
       const lx=len/2-.08,ly=wid/2-.08;for(const [x,y] of [[-lx,-ly],[lx,-ly],[-lx,ly],[lx,ly]]){const q=P(el,m(x),m(y));s.push(cil(q.x,q.y,m(.03),Math.max(.2,h-.06),0,C.madeiraT,C.madeiraL,C));}
       s.push(caixa(el,0,0,m(len/2),m(wid/2),0,.06,Math.max(.2,h-.06),C.topo,C.lado,C));
     }
-    for(const [x,y] of pos.slice(mid))s.push(cadeiraIso(el,x,y,C,getOpt(el,'chair','encosto')));
+    for(const [x,y] of frenteC)s.push(cadeiraIso(el,x,y,C,getOpt(el,'chair','encosto')));
     halo(m(Math.max(len,wid)/2+.65));
   }
   if(t==='luis16'){
@@ -1646,6 +1664,24 @@ function isoSpriteFor(el){
     s.push(florzinhas(0,0,z+0.78,m(0.2),7,C,florPal(el)));
     s.push(florzinhas(0,0,z+0.6,m(0.26),6,C,florPal(el)));
     halo(m(0.45));
+  }
+  if(t==='cerejeira'){
+    const tr=el.tree||{height:3.2,pot:.65,trunk:2.1,canopy:2.8},H=+tr.height||3.2,TH=Math.min(H-.35,+tr.trunk||2.1),R=m((+tr.canopy||2.8)/2),PR=m((+tr.pot||.65)/2);
+    s.push(sombra(0,0,R*.82,C));
+    s.push(cil(0,0,PR,.52,0,'#a47a62','#72503f',C));
+    s.push(cil(0,0,m(.09),Math.max(.5,TH-.18),.42,'#8a634b','#634433',C));
+    const pink=['#f8e4e9','#f2c7d2','#e9aebe','#f6d6de'],clusters=[];
+    for(let i=0;i<22;i++){
+      const a=i*2.399963,rad=R*(.18+.77*((i%7)/6)),lx=Math.cos(a)*rad,ly=Math.sin(a)*rad;
+      const dome=.28+Math.sqrt(Math.max(0,1-(rad/R)**2))*(H-TH-.15),z=TH+dome;
+      const q=P(el,lx,ly);clusters.push({q,z,i,lx,ly});
+    }
+    for(let i=0;i<12;i++){
+      const a=i*Math.PI*2/12,rad=R*(.55+(i%3)*.17),q=P(el,Math.cos(a)*rad,Math.sin(a)*rad),base=P(el,0,0);
+      s.push(`<path d="M ${base.x} ${base.y-TH*VZ()} Q ${q.x*.5} ${base.y-(TH+.38)*VZ()} ${q.x} ${q.y-(TH+.18)*VZ()}" fill="none" stroke="#75503e" stroke-width="${m(.055)}" stroke-linecap="round"/>`);}
+    clusters.sort((a,b)=>(a.q.y-a.z*VZ())-(b.q.y-b.z*VZ()));
+    for(const c of clusters)s.push(`<circle cx="${c.q.x}" cy="${c.q.y-c.z*VZ()}" r="${m(.16+(c.i%3)*.035)}" fill="${pink[c.i%pink.length]}" stroke="#b98392" stroke-width=".5" opacity=".96"/>`);
+    halo(R+m(.2));
   }
   if(t==='arco'){
     const pA=P(el,-m(1.0),0), pB=P(el,m(1.0),0);
@@ -1697,11 +1733,10 @@ function isoSpriteFor(el){
   if(t==='bistro'){
     const d=dimsFor(el),R=roundRadius(el),H=d.height;s.push(sombra(0,0,R+m(.2),C));
     const o=R+m(0.30), pos=[],n=+getOpt(el,'seats','4');
-    for(let i=0;i<n;i++){const a=i*2*Math.PI/n;pos.push([Math.cos(a)*o,Math.sin(a)*o]);}
-    pos.sort((u,v)=>(u[0]+u[1])-(v[0]+v[1]));
-    const mid=Math.ceil(n/2);for(const [lx,ly] of pos.slice(0,mid))s.push(banquetaIso(el,lx,ly,C));
+    for(let i=0;i<n;i++){const a=i*2*Math.PI/n;pos.push([Math.cos(a)*o,Math.sin(a)*o,a*180/Math.PI+90]);}
+    const [atrasB,frenteB]=depth(pos);for(const [lx,ly,a] of atrasB)s.push(banquetaIso(el,lx,ly,C,a));
     s.push(tulipa(0,0,Math.max(.35,H-.06),C));s.push(cil(0,0,R,0.05,H,C.topo,C.lado,C));
-    for(const [lx,ly] of pos.slice(mid))s.push(banquetaIso(el,lx,ly,C));
+    for(const [lx,ly,a] of frenteB)s.push(banquetaIso(el,lx,ly,C,a));
     halo(R+m(.5));
   }
   if(t==='bolo'){
@@ -1714,6 +1749,9 @@ function isoSpriteFor(el){
   if(t==='noivos'||t==='buffet'||t==='apoiofina'){
     const d=dimsFor(el), base=getOpt(el,'base','bloco'),H=d.height;
     s.push(sombra(0,0,m(Math.max(d.length,d.width)/2+0.15),C));
+    const noivosPos=t==='noivos'?[[-m(d.length/4),m(d.width/2+0.28),180],[m(d.length/4),m(d.width/2+0.28),180]]:[];
+    const [noivosAtras,noivosFrente]=depth(noivosPos);
+    for(const [lx,ly,a] of noivosAtras)s.push(cadeiraIso(el,lx,ly,C,'encosto',a));
     if(base==='bloco'){
       s.push(caixa(el,0,0,m(d.length/2),m(d.width/2),0,H,0,C.topo,isoFinish==='real'?C.branco:C.lado,C));
     } else if(base==='central'){
@@ -1729,7 +1767,7 @@ function isoSpriteFor(el){
       for(const [px,py] of pr.slice(2)){const pq=P(el,px,py);
         s.push(cil(pq.x,pq.y,m(0.03),Math.max(.2,H-.06),0,C.madeiraT,C.madeiraL,C));}
     }
-    if(t==='noivos')for(const dx of [-d.length/4,d.length/4])s.push(cadeiraIso(el,m(dx),m(d.width/2+0.28),C));
+    for(const [lx,ly,a] of noivosFrente)s.push(cadeiraIso(el,lx,ly,C,'encosto',a));
     halo(m(Math.max(d.length,d.width)/2+0.35));
   }
   if(t==='cadeira'){s.push(sombra(0,0,m(0.24),C));
@@ -1737,10 +1775,7 @@ function isoSpriteFor(el){
     s.push(cil(0,0,m(0.19),0.05,0.44,C.topo,C.lado,C));halo(m(0.4));}
   if(t==='fileira'){
     const g=m(0.5),tot=5*g;
-    for(let i=0;i<6;i++)s.push(sombra(P(el,-tot/2+i*g,0).x,P(el,-tot/2+i*g,0).y,m(0.22),C));
-    for(let i=0;i<6;i++){const q=P(el,-tot/2+i*g,0);
-      s.push(cil(q.x,q.y+m(0.02)*0,m(0.05),0.85,0,C.madeiraT,C.madeiraL,C));
-      s.push(cil(q.x,q.y,m(0.19),0.05,0.44,C.topo,C.lado,C));}
+    for(let i=0;i<6;i++)s.push(cadeiraIso(el,-tot/2+i*g,0,C,'encosto',0));
     halo(m(1.7));}
   if(t==='banqueta'){s.push(banquetaIso(el,0,0,C));halo(m(0.35));}
   if(t==='sofa'){
@@ -2070,6 +2105,8 @@ function updateSelPanel(){
   inspector.classList.toggle('open',!!n);
   inspector.setAttribute('aria-hidden',n?'false':'true');
   document.getElementById('selTools').style.display=n?'grid':'none';
+  document.getElementById('btnGroup').style.display=n>1?'':'none';
+  document.getElementById('btnUngroup').style.display=n&&selEls().some(x=>x.groupId!=null)?'':'none';
   const emp=document.getElementById('selEmpty');
   emp.style.display=n?'none':'block';
   if(!n)emp.textContent='Nada selecionado.';
@@ -2092,6 +2129,11 @@ function updateSelPanel(){
   }
   if(one&&one.type==='namePin'){
     box.innerHTML=`<div class="opt-row"><span class="lab">Nome do indicador</span></div><div class="custom-dim" style="grid-template-columns:1fr"><label>Texto<input type="text" maxlength="48" data-pin-text value="${escText(one.text||'Novo local')}"></label></div>`;
+    return;
+  }
+  if(one&&one.type==='cerejeira'){
+    const tr=one.tree||(one.tree={height:3.2,pot:.65,trunk:2.1,canopy:2.8});
+    box.innerHTML=`<div class="opt-row"><span class="lab">Dimensões da cerejeira</span></div><div class="custom-dim"><label>Altura total (m)<input type="number" min="1.8" max="6" step=".1" data-tree="height" value="${tr.height}"></label><label>Vaso/base (m)<input type="number" min=".3" max="1.5" step=".05" data-tree="pot" value="${tr.pot}"></label><label>Altura do tronco (m)<input type="number" min="1" max="4.8" step=".1" data-tree="trunk" value="${tr.trunk}"></label><label>Diâmetro da cúpula (m)<input type="number" min="1.5" max="6" step=".1" data-tree="canopy" value="${tr.canopy}"></label></div>`;
     return;
   }
   if(one&&one.type==='puffRect'){
@@ -2126,6 +2168,14 @@ document.getElementById('optRows').addEventListener('change',e=>{
   if(custom&&one.type==='customTable'){const limits={length:[.4,12],width:[.4,12],height:[.3,2]},[min,max]=limits[custom.dataset.custom],value=Math.min(max,Math.max(min,+custom.value||min));one.custom[custom.dataset.custom]=value;render();return;}
   const dim=e.target.closest('input[data-dim]');
   if(dim&&EDITABLE_DIMS.has(one.type)){one.dimensions=one.dimensions||{};one.dimensions[dim.dataset.dim]=Math.max(.2,+dim.value||.2);render();return;}
+  const tree=e.target.closest('input[data-tree]');
+  if(tree&&one.type==='cerejeira'){
+    one.tree=one.tree||{height:3.2,pot:.65,trunk:2.1,canopy:2.8};
+    const limits={height:[1.8,6],pot:[.3,1.5],trunk:[1,4.8],canopy:[1.5,6]},[min,max]=limits[tree.dataset.tree];
+    one.tree[tree.dataset.tree]=Math.min(max,Math.max(min,+tree.value||min));
+    if(one.tree.trunk>one.tree.height-.35)one.tree.trunk=Math.max(1,one.tree.height-.35);
+    render();return;
+  }
   const puff=e.target.closest('input[data-puff]');
   if(puff&&one.type==='puffRect'){one.puff=one.puff||{};one.puff[puff.dataset.puff]=Math.max(.05,+puff.value||.05);render();}
   const pinText=e.target.closest('input[data-pin-text]');
@@ -2223,6 +2273,7 @@ board.addEventListener('pointerdown',e=>{
     if(placing==='passarela')el.len=3;
     if(placing==='trilhavelas')el.len=2.5;
     if(placing==='namePin')el.text='Novo local';
+    if(placing==='cerejeira')el.tree={height:3.2,pot:.65,trunk:2.1,canopy:2.8};
     els.push(el);sel=new Set([el.id]);
     if(!e.shiftKey)cancelPlacing();
     render();return;
@@ -2235,8 +2286,9 @@ board.addEventListener('pointerdown',e=>{
   const g=e.target.closest('.el');
   if(g){
     const id=+g.dataset.id;
-    if(e.shiftKey){sel.has(id)?sel.delete(id):sel.add(id);render();return;}
-    if(!sel.has(id))sel=new Set([id]);
+    const hit=els.find(x=>x.id===id),ids=hit&&hit.groupId!=null?els.filter(x=>x.groupId===hit.groupId).map(x=>x.id):[id];
+    if(e.shiftKey){const remove=ids.every(x=>sel.has(x));for(const x of ids)remove?sel.delete(x):sel.add(x);render();return;}
+    if(!ids.every(x=>sel.has(x)))sel=new Set(ids);
     selMeas=null;render();
     drag={mode:'els',items:selEls().map(el=>({el,dx:p.x-el.x,dy:p.y-el.y,
       node:layer.querySelector(`[data-id="${el.id}"]`)}))};
@@ -2312,10 +2364,17 @@ board.addEventListener('touchmove',e=>{
 board.addEventListener('touchend',()=>{pinch=null;});
 
 /* ===== ferramentas ===== */
-function rot(d){if(!sel.size)return;for(const el of selEls())el.rot=(el.rot+d+360)%360;render();}
+function rot(d){if(!sel.size)return;const items=selEls();
+  if(items.length>1){const cx=items.reduce((s,x)=>s+x.x,0)/items.length,cy=items.reduce((s,x)=>s+x.y,0)/items.length,a=d*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);
+    for(const el of items){const dx=el.x-cx,dy=el.y-cy;el.x=cx+dx*c-dy*sn;el.y=cy+dx*sn+dy*c;el.rot=(el.rot+d+360)%360;}}
+  else items[0].rot=(items[0].rot+d+360)%360;render();}
 function dup(){if(!sel.size)return;const novos=[];
-  for(const el of selEls()){const c={...el,id:nextId++,x:el.x+m(0.6),y:el.y+m(0.6),opts:el.opts?{...el.opts}:undefined};els.push(c);novos.push(c.id);}
+  const groupMap=new Map();
+  for(const el of selEls()){let gid=el.groupId;if(gid!=null){if(!groupMap.has(gid))groupMap.set(gid,nextGroup++);gid=groupMap.get(gid);}
+    const c={...el,id:nextId++,x:el.x+m(0.6),y:el.y+m(0.6),groupId:gid,opts:el.opts?{...el.opts}:undefined,dimensions:el.dimensions?{...el.dimensions}:undefined,puff:el.puff?{...el.puff}:undefined,tree:el.tree?{...el.tree}:undefined};els.push(c);novos.push(c.id);}
   sel=new Set(novos);render();}
+function groupSelected(){if(sel.size<2)return;const gid=nextGroup++;for(const el of selEls())el.groupId=gid;render();toast('Elementos agrupados');}
+function ungroupSelected(){if(!sel.size)return;const gids=new Set(selEls().map(x=>x.groupId).filter(x=>x!=null));for(const el of els)if(gids.has(el.groupId))delete el.groupId;render();toast('Grupo desfeito');}
 function del(){
   if(selMeas!==null){meas.splice(selMeas,1);selMeas=null;renderMeas();return;}
   if(!sel.size)return;
@@ -2325,6 +2384,8 @@ document.getElementById('btnRotL').onclick=()=>rot(-15);
 document.getElementById('btnRotR').onclick=()=>rot(15);
 document.getElementById('btnDup').onclick=dup;
 document.getElementById('btnDel').onclick=del;
+document.getElementById('btnGroup').onclick=groupSelected;
+document.getElementById('btnUngroup').onclick=ungroupSelected;
 document.getElementById('btnCloseSel').onclick=()=>{sel.clear();selMeas=null;render();};
 document.getElementById('lenMinus').onclick=()=>{const o=selEls()[0];
   if(o&&(o.type==='passarela'||o.type==='trilhavelas')){o.len=Math.max(1,(o.len||3)-0.5);render();}};
@@ -2339,6 +2400,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='r'||e.key==='R')rot(e.shiftKey?-15:15);
   if(e.key==='f'||e.key==='F')fitAnim();
   if((e.ctrlKey||e.metaKey)&&e.key==='d'){dup();e.preventDefault();}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='g'){e.shiftKey?ungroupSelected():groupSelected();e.preventDefault();}
   if((e.ctrlKey||e.metaKey)&&e.key==='a'){sel=new Set(visibleEls().map(x=>x.id));render();e.preventDefault();}
   const step=e.shiftKey?m(0.5):m(0.1);
   if(sel.size){
@@ -2389,7 +2451,7 @@ document.getElementById('fileOpen').addEventListener('change',async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     const d=JSON.parse(await f.text());
-    els=d.els||[];nextId=Math.max(0,...els.map(x=>x.id),0)+1;
+    els=d.els||[];nextId=Math.max(0,...els.map(x=>x.id),0)+1;nextGroup=Math.max(0,...els.map(x=>+x.groupId||0),0)+1;
     labels=d.labels||labels;labelsOn=d.labelsOn!==false;measOn=d.measOn!==false;
     meas=d.meas||[];scaleAdj=d.scaleAdj||1;
     document.getElementById('scaleAdj').value=scaleAdj*100;
@@ -2637,6 +2699,7 @@ function stampFoot(){
     if(t==='customTable'){const c=el.custom||{},len=+c.length||2,wid=+c.width||1;
       if(c.shape==='round')circ=m(Math.max(len,wid)/2)+folga;else rect=[m(len/2)+folga,m(wid/2)+folga];}
     if(t==='vasoG')circ=m(0.28);
+    if(t==='cerejeira'){const tr=el.tree||{pot:.65};circ=m((+tr.pot||.65)/2);}
     if(t==='painel')rect=[m(1.0)+folga,m(0.15)+folga];
     if(t==='puffRect'){const p=el.puff||{length:1.2,width:.55};rect=[m(p.length/2)+folga,m(p.width/2)+folga];}
     if(!circ&&!rect)continue;
@@ -3014,14 +3077,15 @@ function circleFree(x,y,r){
     if(blockedAt(x+Math.cos(a)*r,y+Math.sin(a)*r))return false;
   return true;
 }
-const FOOT={mesa8:1.2,luis16:0.42,mesaripada:1.5,mesaripadaP:1.0,dotricas:0.4,vasotorre:0.35,vasoceramica:0.2,portalflor:0.8,mesa4:1.0,mesaq4:1.05,cadeira4:0.4,vasoP:0.12,vasoG:0.42,arco:1.35,painel:1.2,bistro:0.85,redonda:1.0,bolo:0.75,noivos:1.45,buffet:1.25,namePin:0.45,
+const FOOT={mesa8:1.2,luis16:0.42,mesaripada:1.5,mesaripadaP:1.0,dotricas:0.4,vasotorre:0.35,vasoceramica:0.2,portalflor:0.8,mesa4:1.0,mesaq4:1.05,cadeira4:0.4,vasoP:0.12,vasoG:0.42,cerejeira:1.6,arco:1.35,painel:1.2,bistro:0.85,redonda:1.0,bolo:0.75,noivos:1.45,buffet:1.25,namePin:0.45,
             apoiofina:0.8,sofa:1.15,puff:0.55,puffRect:0.85,cadeira:0.4,banqueta:0.35,fileira:1.7,passarela:1.0};
 function farFromPlaced(x,y,need){
   for(const e of els){
     const customSize=e.type==='customTable'?Math.max(+(e.custom&&e.custom.length)||2,+(e.custom&&e.custom.width)||1)/2+.5:null;
     const editableSize=EDITABLE_DIMS.has(e.type)?Math.max(dimsFor(e).length,dimsFor(e).width)/2+.45:null;
     const puffSize=e.type==='puffRect'?Math.max(+(e.puff&&e.puff.length)||1.2,+(e.puff&&e.puff.width)||.55)/2+.25:null;
-    const f=(customSize||editableSize||puffSize||FOOT[e.type]||1)*PT_PER_M*scaleAdj;
+    const treeSize=e.type==='cerejeira'?((+(e.tree&&e.tree.canopy)||2.8)/2+.2):null;
+    const f=(customSize||editableSize||puffSize||treeSize||FOOT[e.type]||1)*PT_PER_M*scaleAdj;
     if(Math.hypot(e.x-x,e.y-y)<need+f)return false;
   }
   return true;
