@@ -918,17 +918,17 @@ const florPal=el=>FLORPAL[getOpt(el,'flor','rosas')]||FLORPAL.rosas;
 const decorZ=el=>getOpt(el,'suporte','mesa')==='mesa'?0.78:0;
 const FLOWER_TYPES=new Set(['vaso','vasoP','vasoG','vasotorre']);
 const FLOWER_DEFAULTS={
-  vasoP:{height:.30,potSize:.09,potHeight:.12,flowerSize:.16},
-  vaso:{height:.48,potSize:.16,potHeight:.20,flowerSize:.28},
-  vasoG:{height:1.15,potSize:.32,potHeight:.50,flowerSize:.62},
-  vasotorre:{height:1.25,potSize:.26,potHeight:.62,flowerSize:.62}
+  vasoP:{height:.30,potSize:.09,potHeight:.12,flowerSize:.16,foliage:'no'},
+  vaso:{height:.48,potSize:.16,potHeight:.20,flowerSize:.28,foliage:'no'},
+  vasoG:{height:1.15,potSize:.32,potHeight:.50,flowerSize:.62,foliage:'yes'},
+  vasotorre:{height:1.25,potSize:.26,potHeight:.62,flowerSize:.62,foliage:'yes'}
 };
 function flowerCfg(el){
   const pal=florPal(el),d=FLOWER_DEFAULTS[el.type]||FLOWER_DEFAULTS.vaso;
   return {...d,mixed:'yes',color1:pal[0],color2:pal[1],...(el.flower||{})};
 }
 function flowerColors(el){const f=flowerCfg(el);return f.mixed==='no'?[f.color1]:[f.color1,f.color2];}
-function treeCfg(el){return {height:3.2,pot:.65,trunk:2.1,canopy:2.8,model:'blossom',potShape:'round',...(el.tree||{})};}
+function treeCfg(el){return {height:3.2,pot:.65,potHeight:.52,trunk:2.1,canopy:2.8,model:'blossom',potShape:'round',...(el.tree||{})};}
 
 /* ===== estilos de elementos =====
    geo: formas simples · det: cadeiras com encosto, toalhas · flor: mesa=núcleo, cadeiras=pétalas */
@@ -1002,6 +1002,7 @@ function rectTableSvg(s,w,h,nChairs,gapChair,kind){
 }
 function flowerVaseSvg(s,el){
   const f=flowerCfg(el),cols=flowerColors(el),R=m(f.flowerSize/2),PR=m(f.potSize/2),n=el.type==='vasoP'?5:el.type==='vaso'?8:12;
+  if(f.foliage!=='no')s.push(`<circle fill="#7f936b" stroke="#617452" stroke-width=".6" r="${R*.88}" opacity=".88"/>`);
   for(let i=0;i<n;i++){const a=i*2.399963,r=R*(.18+.68*((i%5)/4));
     s.push(`<circle fill="${cols[i%cols.length]}" stroke="#78805f" stroke-width=".5" r="${Math.max(m(.025),R*.22)}" cx="${Math.cos(a)*r}" cy="${Math.sin(a)*r}"/>`);}
   s.push(`<circle fill="#d9d6c9" stroke="#8a8069" stroke-width=".7" r="${PR}"/>`);
@@ -1106,8 +1107,8 @@ function svgFor(el){
     for(let i=0;i<12;i++){const a=i*Math.PI*2/12,r=R*(.46+(i%3)*.16);
       s.push(`<line x1="0" y1="0" x2="${Math.cos(a)*r}" y2="${Math.sin(a)*r}" stroke="#75503e" stroke-width="${m(.035)}" stroke-linecap="round"/>`);}
     if(tr.model==='blossom'){const pink=['#f5d7df','#efbccb','#e8a9bb','#f8e4e9'];
-      for(let i=0;i<24;i++){const a=i*2.399963,r=R*(.25+.68*((i%7)/6));
-        s.push(`<circle cx="${Math.cos(a)*r}" cy="${Math.sin(a)*r}" r="${m(.12+(i%3)*.025)}" fill="${pink[i%pink.length]}" stroke="#bf8797" stroke-width=".45" opacity=".94"/>`);}}
+      for(let i=0;i<12;i++){const a=i*Math.PI*2/12,r=R*(.46+(i%3)*.16);for(const [j,f] of [.58,.8,1].entries())
+        s.push(`<circle cx="${Math.cos(a)*r*f}" cy="${Math.sin(a)*r*f}" r="${m(.105+(i+j)%3*.018)}" fill="${pink[(i+j)%pink.length]}" stroke="#bf8797" stroke-width=".45" opacity=".95"/>`);}}
     if(tr.model==='foliage'){s.push(`<circle cx="0" cy="0" r="${R*.86}" fill="#82926c" stroke="#607150" stroke-width="1" opacity=".86"/>`);
       for(let i=0;i<9;i++){const a=i*Math.PI*2/9;s.push(`<circle cx="${Math.cos(a)*R*.58}" cy="${Math.sin(a)*R*.58}" r="${R*.32}" fill="${i%2?'#9ead86':'#71845e'}" opacity=".9"/>`);}}
     s.push(`<circle class="halo" r="${R+m(.18)}"/>`);}
@@ -1226,6 +1227,7 @@ function rectTableCv(ctx,w,h,n,gap,kind){
 }
 function flowerVaseCv(ctx,el){
   const f=flowerCfg(el),cols=flowerColors(el),R=m(f.flowerSize/2),PR=m(f.potSize/2),n=el.type==='vasoP'?5:el.type==='vaso'?8:12;
+  if(f.foliage!=='no'){ctx.fillStyle='#7f936b';ctx.beginPath();ctx.arc(0,0,R*.88,0,7);ctx.fill();ctx.stroke();}
   for(let i=0;i<n;i++){const a=i*2.399963,r=R*(.18+.68*((i%5)/4));ctx.fillStyle=cols[i%cols.length];ctx.beginPath();ctx.arc(Math.cos(a)*r,Math.sin(a)*r,Math.max(m(.025),R*.22),0,7);ctx.fill();ctx.stroke();}
   ctx.fillStyle='#d9d6c9';ctx.beginPath();ctx.arc(0,0,PR,0,7);ctx.fill();ctx.stroke();
 }
@@ -1251,7 +1253,7 @@ function drawOnCanvas(ctx, el){
     ctx.fillStyle='#886451';ctx.beginPath();tr.potShape==='square'?ctx.roundRect(-pot,-pot,pot*2,pot*2,m(.04)):ctx.arc(0,0,pot,0,7);ctx.fill();ctx.stroke();
     ctx.strokeStyle='#75503e';ctx.lineWidth=m(.035);
     for(let i=0;i<12;i++){const a=i*Math.PI*2/12,r=R*(.46+(i%3)*.16);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);ctx.stroke();}
-    if(tr.model==='blossom'){const pink=['#f5d7df','#efbccb','#e8a9bb','#f8e4e9'];for(let i=0;i<24;i++){const a=i*2.399963,r=R*(.25+.68*((i%7)/6));ctx.fillStyle=pink[i%pink.length];ctx.beginPath();ctx.arc(Math.cos(a)*r,Math.sin(a)*r,m(.12+(i%3)*.025),0,7);ctx.fill();ctx.stroke();}}
+    if(tr.model==='blossom'){const pink=['#f5d7df','#efbccb','#e8a9bb','#f8e4e9'];for(let i=0;i<12;i++){const a=i*Math.PI*2/12,r=R*(.46+(i%3)*.16);for(const [j,f] of [.58,.8,1].entries()){ctx.fillStyle=pink[(i+j)%pink.length];ctx.beginPath();ctx.arc(Math.cos(a)*r*f,Math.sin(a)*r*f,m(.105+(i+j)%3*.018),0,7);ctx.fill();ctx.stroke();}}}
     if(tr.model==='foliage'){ctx.fillStyle='#82926c';ctx.beginPath();ctx.arc(0,0,R*.86,0,7);ctx.fill();ctx.stroke();}}
   if(t==='arco'){ctx.fillStyle='rgba(168,133,63,.5)';
     for(const sx of [-1,1]){ctx.beginPath();ctx.arc(sx*m(1.0),0,m(0.16),0,7);ctx.fill();ctx.stroke();}
@@ -1567,10 +1569,11 @@ function flowerVaseIso(el,C){
   const f=flowerCfg(el),cols=flowerColors(el),z=decorZ(el),PR=m(f.potSize/2),FR=m(f.flowerSize/2),top=z+f.height;
   let out='';if(!z)out+=sombra(0,0,Math.max(PR,FR),C);
   out+=cil(0,0,PR,f.potHeight,z,'#e5e2d7',isoFinish==='real'?'url(#gSide)':'#c9c2af',C);
-  const stemTop=Math.max(z+f.potHeight+.04,top-.06),stemH=Math.max(.05,stemTop-(z+f.potHeight));
-  out+=cil(0,0,m(.018),stemH,z+f.potHeight,'#789064','#5d704e',C);
-  const e=ER(FR);out+=`<ellipse cx="0" cy="${-(top-.08)*VZ()}" rx="${e.rx}" ry="${e.ry*1.35}" fill="${C.verde}" stroke="${C.tr}" stroke-width=".5" opacity=".78"/>`;
-  out+=florzinhas(0,0,top,FR*.76,el.type==='vasoP'?5:el.type==='vaso'?8:12,C,cols);
+  const base=z+f.potHeight,body=Math.max(.06,top-base),e=ER(FR),n=el.type==='vasoP'?5:el.type==='vaso'?8:12;
+  if(f.foliage!=='no')out+=`<ellipse cx="0" cy="${-(base+body*.52)*VZ()}" rx="${e.rx}" ry="${Math.max(e.ry*1.2,body*VZ()*.54)}" fill="${C.verde}" stroke="${C.tr}" stroke-width=".5" opacity=".86"/>`;
+  out+=florzinhas(0,0,top-.04,FR*.76,n,C,cols);
+  out+=florzinhas(0,0,base+body*.48,FR*(f.foliage==='no'?.62:.72),Math.max(4,Math.round(n*.7)),C,cols);
+  out+=`<circle cx="0" cy="${-(base+body*.72)*VZ()}" r="${Math.max(m(.035),FR*.18)}" fill="${cols[0]}" stroke="${C.tr}" stroke-width=".4"/>`;
   return out;
 }
 function isoSpriteFor(el){
@@ -1666,21 +1669,16 @@ function isoSpriteFor(el){
   }
   if(t==='vasoP'||t==='vasoG'){s.push(flowerVaseIso(el,C));const f=flowerCfg(el);halo(m(Math.max(f.potSize,f.flowerSize)/2+.12));}
   if(t==='cerejeira'){
-    const tr=treeCfg(el),H=+tr.height||3.2,TH=Math.min(H-.35,+tr.trunk||2.1),R=m((+tr.canopy||2.8)/2),PR=m((+tr.pot||.65)/2);
+    const tr=treeCfg(el),H=+tr.height||3.2,PH=Math.min(H-.7,+tr.potHeight||.52),TH=Math.max(PH+.35,Math.min(H-.35,+tr.trunk||2.1)),R=m((+tr.canopy||2.8)/2),PR=m((+tr.pot||.65)/2);
     s.push(sombra(0,0,R*.82,C));
-    s.push(tr.potShape==='square'?caixa(el,0,0,PR,PR,0,.52,0,'#a47a62','#72503f',C):cil(0,0,PR,.52,0,'#a47a62','#72503f',C));
-    s.push(cil(0,0,m(.09),Math.max(.5,TH-.18),.42,'#8a634b','#634433',C));
-    const pink=['#f8e4e9','#f2c7d2','#e9aebe','#f6d6de'],clusters=[];
-    for(let i=0;i<22;i++){
-      const a=i*2.399963,rad=R*(.18+.77*((i%7)/6)),lx=Math.cos(a)*rad,ly=Math.sin(a)*rad;
-      const dome=.28+Math.sqrt(Math.max(0,1-(rad/R)**2))*(H-TH-.15),z=TH+dome;
-      const q=P(el,lx,ly);clusters.push({q,z,i,lx,ly});
-    }
+    s.push(tr.potShape==='square'?caixa(el,0,0,PR,PR,0,PH,0,'#a47a62','#72503f',C):cil(0,0,PR,PH,0,'#a47a62','#72503f',C));
+    s.push(cil(0,0,m(.09),Math.max(.2,TH-PH+.08),Math.max(0,PH-.08),'#8a634b','#634433',C));
+    const pink=['#f8e4e9','#f2c7d2','#e9aebe','#f6d6de'],branchFlowers=[],crown=Math.max(.25,H-TH),base=P(el,0,0),S={x:base.x,y:base.y-TH*VZ()};
     for(let i=0;i<12;i++){
-      const a=i*Math.PI*2/12,rad=R*(.55+(i%3)*.17),q=P(el,Math.cos(a)*rad,Math.sin(a)*rad),base=P(el,0,0);
-      s.push(`<path d="M ${base.x} ${base.y-TH*VZ()} Q ${q.x*.5} ${base.y-(TH+.38)*VZ()} ${q.x} ${q.y-(TH+.18)*VZ()}" fill="none" stroke="#75503e" stroke-width="${m(.055)}" stroke-linecap="round"/>`);}
-    clusters.sort((a,b)=>(a.q.y-a.z*VZ())-(b.q.y-b.z*VZ()));
-    if(tr.model==='blossom')for(const c of clusters)s.push(`<circle cx="${c.q.x}" cy="${c.q.y-c.z*VZ()}" r="${m(.16+(c.i%3)*.035)}" fill="${pink[c.i%pink.length]}" stroke="#b98392" stroke-width=".5" opacity=".96"/>`);
+      const a=i*Math.PI*2/12,rad=R*(.55+(i%3)*.17),q=P(el,Math.cos(a)*rad,Math.sin(a)*rad),endZ=TH+crown*(.48+(i%3)*.15),E={x:q.x,y:q.y-endZ*VZ()},ctrlZ=Math.min(H,endZ+crown*.36),Q={x:(S.x+E.x)*.48,y:(S.y+E.y)*.5-(ctrlZ-endZ)*VZ()};
+      s.push(`<path d="M ${S.x} ${S.y} Q ${Q.x} ${Q.y} ${E.x} ${E.y}" fill="none" stroke="#75503e" stroke-width="${m(.055)}" stroke-linecap="round"/>`);
+      if(tr.model==='blossom')for(const [j,u] of [.56,.78,1].entries()){const v=1-u;branchFlowers.push({x:v*v*S.x+2*v*u*Q.x+u*u*E.x,y:v*v*S.y+2*v*u*Q.y+u*u*E.y,i:i+j});}}
+    if(tr.model==='blossom')for(const f of branchFlowers.sort((a,b)=>a.y-b.y))s.push(`<circle cx="${f.x}" cy="${f.y}" r="${m(.105+(f.i%3)*.018)}" fill="${pink[f.i%pink.length]}" stroke="#b98392" stroke-width=".5" opacity=".96"/>`);
     if(tr.model==='foliage'){
       const e=ER(R);s.push(`<ellipse cx="0" cy="${-(TH+(H-TH)*.56)*VZ()}" rx="${e.rx}" ry="${e.ry*1.55}" fill="#71845e" stroke="#526447" stroke-width="1" opacity=".92"/>`);
       for(let i=0;i<8;i++){const a=i*Math.PI*2/8,q=P(el,Math.cos(a)*R*.55,Math.sin(a)*R*.55);s.push(`<circle cx="${q.x}" cy="${q.y-(TH+(H-TH)*(.45+i%2*.18))*VZ()}" r="${R*.27}" fill="${i%2?'#9ead86':'#7f936b'}" opacity=".9"/>`);}}
@@ -2124,6 +2122,7 @@ function updateSelPanel(){
     const f=flowerCfg(one),support=getOpt(one,'suporte','mesa');
     box.innerHTML=`<div class="opt-row"><span class="lab">Posição</span><div class="seg"><button class="btn${support==='mesa'?' on':''}" data-k="suporte" data-v="mesa">Sobre mesa</button><button class="btn${support==='chao'?' on':''}" data-k="suporte" data-v="chao">No chão</button></div></div>
       <div class="opt-row"><span class="lab">Dimensões do arranjo</span></div><div class="custom-dim"><label>Altura total (m)<input type="number" min=".15" max="4" step=".05" data-flower="height" value="${f.height}"></label><label>Diâmetro do vaso (m)<input type="number" min=".05" max="2" step=".05" data-flower="potSize" value="${f.potSize}"></label><label>Altura do vaso (m)<input type="number" min=".05" max="2.5" step=".05" data-flower="potHeight" value="${f.potHeight}"></label><label>Diâmetro das flores (m)<input type="number" min=".08" max="3" step=".05" data-flower="flowerSize" value="${f.flowerSize}"></label></div>
+      <div class="opt-row"><span class="lab">Volume do arranjo</span><div class="seg"><button class="btn${f.foliage!=='no'?' on':''}" data-flower-foliage="yes">Cúpula verde + flores</button><button class="btn${f.foliage==='no'?' on':''}" data-flower-foliage="no">Somente flores</button></div></div>
       <div class="opt-row"><span class="lab">Cores das flores</span><div class="seg"><button class="btn${f.mixed==='no'?' on':''}" data-flower-mixed="no">Uma cor</button><button class="btn${f.mixed!=='no'?' on':''}" data-flower-mixed="yes">Mesclado</button></div></div>
       <div class="opt-row"><span class="lab">Combinações</span><div class="seg"><button class="btn" data-flower-preset="white">Brancas</button><button class="btn" data-flower-preset="green">Verdes</button><button class="btn" data-flower-preset="whitegreen">Branco + verde</button><button class="btn" data-flower-preset="pinkwhite">Rosa + branco</button></div></div>
       <div class="custom-dim"><label>Cor principal<input type="color" data-flower="color1" value="${f.color1}"></label>${f.mixed==='no'?'':`<label>Cor secundária<input type="color" data-flower="color2" value="${f.color2}"></label>`}</div>`;
@@ -2133,7 +2132,7 @@ function updateSelPanel(){
     const tr=treeCfg(one);one.tree={...tr};
     box.innerHTML=`<div class="opt-row"><span class="lab">Modelo da copa</span><div class="seg"><button class="btn${tr.model==='blossom'?' on':''}" data-tree-model="blossom">Cerejeira</button><button class="btn${tr.model==='branches'?' on':''}" data-tree-model="branches">Só galhos</button><button class="btn${tr.model==='foliage'?' on':''}" data-tree-model="foliage">Cúpula verde</button></div></div>
       <div class="opt-row"><span class="lab">Formato do vaso</span><div class="seg"><button class="btn${tr.potShape==='round'?' on':''}" data-tree-pot="round">Circular</button><button class="btn${tr.potShape==='square'?' on':''}" data-tree-pot="square">Quadrado</button></div></div>
-      <div class="opt-row"><span class="lab">Dimensões da cerejeira</span></div><div class="custom-dim"><label>Altura total (m)<input type="number" min="1.8" max="6" step=".1" data-tree="height" value="${tr.height}"></label><label>Tamanho do vaso (m)<input type="number" min=".3" max="2" step=".05" data-tree="pot" value="${tr.pot}"></label><label>Altura do tronco (m)<input type="number" min="1" max="4.8" step=".1" data-tree="trunk" value="${tr.trunk}"></label><label>Diâmetro da cúpula (m)<input type="number" min="1.5" max="6" step=".1" data-tree="canopy" value="${tr.canopy}"></label></div>`;
+      <div class="opt-row"><span class="lab">Dimensões da cerejeira</span></div><div class="custom-dim"><label>Altura total (m)<input type="number" min="1.8" max="6" step=".1" data-tree="height" value="${tr.height}"></label><label>Tamanho do vaso (m)<input type="number" min=".3" max="2" step=".05" data-tree="pot" value="${tr.pot}"></label><label>Altura do vaso (m)<input type="number" min=".2" max="2" step=".05" data-tree="potHeight" value="${tr.potHeight}"></label><label>Altura do tronco (m)<input type="number" min="1" max="4.8" step=".1" data-tree="trunk" value="${tr.trunk}"></label><label>Diâmetro da cúpula (m)<input type="number" min="1.5" max="6" step=".1" data-tree="canopy" value="${tr.canopy}"></label></div>`;
     return;
   }
   if(one&&one.type==='puffRect'){
@@ -2158,7 +2157,8 @@ document.getElementById('optRows').addEventListener('click',e=>{
   const treeModel=e.target.closest('[data-tree-model]');if(treeModel&&one.type==='cerejeira'){one.tree={...treeCfg(one),model:treeModel.dataset.treeModel};render();return;}
   const treePot=e.target.closest('[data-tree-pot]');if(treePot&&one.type==='cerejeira'){one.tree={...treeCfg(one),potShape:treePot.dataset.treePot};render();return;}
   const flowerMixed=e.target.closest('[data-flower-mixed]');if(flowerMixed&&FLOWER_TYPES.has(one.type)){one.flower={...flowerCfg(one),mixed:flowerMixed.dataset.flowerMixed};render();return;}
-  const flowerPreset=e.target.closest('[data-flower-preset]');if(flowerPreset&&FLOWER_TYPES.has(one.type)){const presets={white:['#f7f5ed','#f7f5ed','no'],green:['#839873','#839873','no'],whitegreen:['#f7f5ed','#839873','yes'],pinkwhite:['#e9b5c2','#f7f5ed','yes']},p=presets[flowerPreset.dataset.flowerPreset];one.flower={...flowerCfg(one),color1:p[0],color2:p[1],mixed:p[2]};render();return;}
+  const flowerFoliage=e.target.closest('[data-flower-foliage]');if(flowerFoliage&&FLOWER_TYPES.has(one.type)){one.flower={...flowerCfg(one),foliage:flowerFoliage.dataset.flowerFoliage};render();return;}
+  const flowerPreset=e.target.closest('[data-flower-preset]');if(flowerPreset&&FLOWER_TYPES.has(one.type)){const presets={white:['#f7f5ed','#f7f5ed','no','no'],green:['#839873','#839873','no','no'],whitegreen:['#f7f5ed','#839873','yes','yes'],pinkwhite:['#e9b5c2','#f7f5ed','yes','no']},p=presets[flowerPreset.dataset.flowerPreset];one.flower={...flowerCfg(one),color1:p[0],color2:p[1],mixed:p[2],foliage:p[3]};render();return;}
   const puffBack=e.target.closest('[data-puff-back]');if(puffBack){one.puff=one.puff||{};one.puff.back=puffBack.dataset.puffBack==='yes';render();return;}
   const shape=e.target.closest('[data-custom-shape]');if(shape){one.custom.shape=shape.dataset.customShape;render();return;}
   const chairs=e.target.closest('[data-custom-chairs]');if(chairs){one.custom.chairs=chairs.dataset.customChairs==='yes';render();return;}
@@ -2175,9 +2175,11 @@ document.getElementById('optRows').addEventListener('change',e=>{
   const tree=e.target.closest('input[data-tree]');
   if(tree&&one.type==='cerejeira'){
     one.tree={...treeCfg(one)};
-    const limits={height:[1.8,6],pot:[.3,2],trunk:[1,4.8],canopy:[1.5,6]},[min,max]=limits[tree.dataset.tree];
+    const limits={height:[1.8,6],pot:[.3,2],potHeight:[.2,2],trunk:[1,4.8],canopy:[1.5,6]},[min,max]=limits[tree.dataset.tree];
     one.tree[tree.dataset.tree]=Math.min(max,Math.max(min,+tree.value||min));
+    if(one.tree.potHeight>one.tree.trunk-.2)one.tree.potHeight=Math.max(.2,one.tree.trunk-.2);
     if(one.tree.trunk>one.tree.height-.35)one.tree.trunk=Math.max(1,one.tree.height-.35);
+    if(one.tree.potHeight>one.tree.height-.7)one.tree.potHeight=Math.max(.2,one.tree.height-.7);
     render();return;
   }
   const flower=e.target.closest('input[data-flower]');
@@ -2284,7 +2286,7 @@ board.addEventListener('pointerdown',e=>{
     if(placing==='passarela')el.len=3;
     if(placing==='trilhavelas')el.len=2.5;
     if(placing==='namePin')el.text='Novo local';
-    if(placing==='cerejeira')el.tree={height:3.2,pot:.65,trunk:2.1,canopy:2.8,model:'blossom',potShape:'round'};
+    if(placing==='cerejeira')el.tree={height:3.2,pot:.65,potHeight:.52,trunk:2.1,canopy:2.8,model:'blossom',potShape:'round'};
     if(FLOWER_TYPES.has(placing))el.flower={...flowerCfg(el)};
     els.push(el);sel=new Set([el.id]);
     if(!e.shiftKey)cancelPlacing();
