@@ -591,6 +591,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   .model-signature b{display:block;margin-top:3px;font-family:"Bodoni 72",Didot,Georgia,serif;font-size:14px;font-weight:400;color:#d1b17d}
   .custom-dim input{width:100%;margin-top:6px;border:1px solid #d1cbc2;background:#fff;padding:10px 9px;color:#211f1b;font:12px inherit}
   .custom-dim{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:4px 20px 12px}.custom-dim label{color:#827a70;font-size:9px}.custom-dim input{padding:8px 6px}.selection-inspector .opt-row .seg.seat-grid{display:grid;grid-template-columns:repeat(4,1fr)}
+  .custom-dim input[type="color"]{height:38px;padding:3px;cursor:pointer}
   @media(max-width:1180px){header{gap:18px;padding-inline:18px}.brand{min-width:250px}.brand-logo{width:92px}.brand-copy{display:none}header .btn{padding-inline:12px}header select.btn{min-width:132px}.selection-inspector.open{width:270px}.inspector-inner{width:270px}.model-signature{display:none}}
   @media(max-width:900px){header{height:80px}.brand{min-width:105px}.project-field{min-width:150px}.bar-actions{overflow:visible;border:0;gap:4px;background:transparent}header .btn{border:1px solid #d4d0c8}header select.btn{display:none}aside{width:220px}}
 </style>
@@ -915,6 +916,19 @@ function italianChairPositions(w,h,n,gap){
 function escText(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 const florPal=el=>FLORPAL[getOpt(el,'flor','rosas')]||FLORPAL.rosas;
 const decorZ=el=>getOpt(el,'suporte','mesa')==='mesa'?0.78:0;
+const FLOWER_TYPES=new Set(['vaso','vasoP','vasoG','vasotorre']);
+const FLOWER_DEFAULTS={
+  vasoP:{height:.30,potSize:.09,potHeight:.12,flowerSize:.16},
+  vaso:{height:.48,potSize:.16,potHeight:.20,flowerSize:.28},
+  vasoG:{height:1.15,potSize:.32,potHeight:.50,flowerSize:.62},
+  vasotorre:{height:1.25,potSize:.26,potHeight:.62,flowerSize:.62}
+};
+function flowerCfg(el){
+  const pal=florPal(el),d=FLOWER_DEFAULTS[el.type]||FLOWER_DEFAULTS.vaso;
+  return {...d,mixed:'yes',color1:pal[0],color2:pal[1],...(el.flower||{})};
+}
+function flowerColors(el){const f=flowerCfg(el);return f.mixed==='no'?[f.color1]:[f.color1,f.color2];}
+function treeCfg(el){return {height:3.2,pot:.65,trunk:2.1,canopy:2.8,model:'blossom',potShape:'round',...(el.tree||{})};}
 
 /* ===== estilos de elementos =====
    geo: formas simples · det: cadeiras com encosto, toalhas · flor: mesa=núcleo, cadeiras=pétalas */
@@ -985,6 +999,13 @@ function rectTableSvg(s,w,h,nChairs,gapChair,kind){
   if(elStyle==='det')s.push(`<rect class="toalha" x="${-hw*.82}" y="${-hh*.76}" width="${w*.82}" height="${h*.76}" rx="2"/>`);
   for(const [x,y,a] of rectChairPositions(w,h,nChairs,gapChair))chairSvg(s,x,y,a,kind);
   const g=gapChair||m(0.3);s.push(`<rect class="halo" x="${-hw-g-m(.3)}" y="${-hh-g-m(.3)}" width="${w+2*g+m(.6)}" height="${h+2*g+m(.6)}"/>`);
+}
+function flowerVaseSvg(s,el){
+  const f=flowerCfg(el),cols=flowerColors(el),R=m(f.flowerSize/2),PR=m(f.potSize/2),n=el.type==='vasoP'?5:el.type==='vaso'?8:12;
+  for(let i=0;i<n;i++){const a=i*2.399963,r=R*(.18+.68*((i%5)/4));
+    s.push(`<circle fill="${cols[i%cols.length]}" stroke="#78805f" stroke-width=".5" r="${Math.max(m(.025),R*.22)}" cx="${Math.cos(a)*r}" cy="${Math.sin(a)*r}"/>`);}
+  s.push(`<circle fill="#d9d6c9" stroke="#8a8069" stroke-width=".7" r="${PR}"/>`);
+  s.push(`<circle class="halo" r="${Math.max(R,PR)+4}"/>`);
 }
 
 function svgFor(el){
@@ -1077,24 +1098,18 @@ function svgFor(el){
     s.push(`<circle class="body" r="${m(0.25)}"/><circle class="chair" r="${m(0.17)}"/>`);
     s.push(`<circle class="core" r="${m(0.10)}"/><circle class="petal" r="${m(0.035)}" cy="${-m(0.02)}"/>`);
     s.push(`<circle class="halo" r="${m(0.25)+4}"/>`);}
-  if(t==='vasoP'){const pal=florPal(el);
-    for(let i=0;i<3;i++){const a=i*Math.PI*2/3;
-      s.push(`<circle fill="${pal[i%3]}" stroke="#8a6d34" stroke-width=".5" r="${m(0.035)}" cx="${Math.cos(a)*m(0.06)}" cy="${Math.sin(a)*m(0.06)}"/>`);}
-    s.push(`<circle class="body" r="${m(0.045)}"/>`);
-    s.push(`<circle class="halo" r="${m(0.14)+4}"/>`);}
-  if(t==='vasoG'){const pal=florPal(el);
-    for(let i=0;i<8;i++){const a=i*Math.PI/4;
-      s.push(`<circle fill="${pal[i%3]}" stroke="#8a6d34" stroke-width=".5" r="${m(0.09)}" cx="${Math.cos(a)*m(0.22)}" cy="${Math.sin(a)*m(0.22)}"/>`);}
-    s.push(`<circle class="core" r="${m(0.13)}"/>`);
-    s.push(`<circle class="halo" r="${m(0.36)+4}"/>`);}
+  if(t==='vasoP'||t==='vasoG')flowerVaseSvg(s,el);
   if(t==='cerejeira'){
-    const tr=el.tree||{height:3.2,pot:.65,trunk:2.1,canopy:2.8},R=m(tr.canopy/2),pot=m(tr.pot/2);
-    s.push(`<circle fill="#886451" stroke="#5f4538" stroke-width="1" r="${pot}"/><circle fill="#6f4b36" r="${m(.09)}"/>`);
+    const tr=treeCfg(el),R=m(tr.canopy/2),pot=m(tr.pot/2);
+    s.push(tr.potShape==='square'?`<rect fill="#886451" stroke="#5f4538" stroke-width="1" x="${-pot}" y="${-pot}" width="${pot*2}" height="${pot*2}" rx="${m(.04)}"/>`:`<circle fill="#886451" stroke="#5f4538" stroke-width="1" r="${pot}"/>`);
+    s.push(`<circle fill="#6f4b36" r="${m(.09)}"/>`);
     for(let i=0;i<12;i++){const a=i*Math.PI*2/12,r=R*(.46+(i%3)*.16);
       s.push(`<line x1="0" y1="0" x2="${Math.cos(a)*r}" y2="${Math.sin(a)*r}" stroke="#75503e" stroke-width="${m(.035)}" stroke-linecap="round"/>`);}
-    const pink=['#f5d7df','#efbccb','#e8a9bb','#f8e4e9'];
-    for(let i=0;i<24;i++){const a=i*2.399963,r=R*(.25+.68*((i%7)/6));
-      s.push(`<circle cx="${Math.cos(a)*r}" cy="${Math.sin(a)*r}" r="${m(.12+(i%3)*.025)}" fill="${pink[i%pink.length]}" stroke="#bf8797" stroke-width=".45" opacity=".94"/>`);}
+    if(tr.model==='blossom'){const pink=['#f5d7df','#efbccb','#e8a9bb','#f8e4e9'];
+      for(let i=0;i<24;i++){const a=i*2.399963,r=R*(.25+.68*((i%7)/6));
+        s.push(`<circle cx="${Math.cos(a)*r}" cy="${Math.sin(a)*r}" r="${m(.12+(i%3)*.025)}" fill="${pink[i%pink.length]}" stroke="#bf8797" stroke-width=".45" opacity=".94"/>`);}}
+    if(tr.model==='foliage'){s.push(`<circle cx="0" cy="0" r="${R*.86}" fill="#82926c" stroke="#607150" stroke-width="1" opacity=".86"/>`);
+      for(let i=0;i<9;i++){const a=i*Math.PI*2/9;s.push(`<circle cx="${Math.cos(a)*R*.58}" cy="${Math.sin(a)*R*.58}" r="${R*.32}" fill="${i%2?'#9ead86':'#71845e'}" opacity=".9"/>`);}}
     s.push(`<circle class="halo" r="${R+m(.18)}"/>`);}
   if(t==='arco'){
     s.push(`<line class="toalha" x1="${-m(1.0)}" y1="0" x2="${m(1.0)}" y2="0"/>`);
@@ -1107,11 +1122,7 @@ function svgFor(el){
     {const pal=florPal(el);
     for(let i=0;i<7;i++)s.push(`<circle fill="${pal[i%3]}" stroke="#8a6d34" stroke-width=".5" r="${m(0.07)}" cx="${-m(0.85)+i*m(0.283)}"/>`);}
     s.push(`<rect class="halo" x="${-m(1.0)-4}" y="${-m(0.3)}" width="${m(2.0)+8}" height="${m(0.6)}"/>`);}
-  if(t==='vaso'){const pal=florPal(el);
-    for(let i=0;i<6;i++){const a=i*Math.PI/3;
-      s.push(`<circle fill="${pal[i%3]}" stroke="#8a6d34" stroke-width=".5" r="${m(0.055)}" cx="${Math.cos(a)*m(0.12)}" cy="${Math.sin(a)*m(0.12)}"/>`);}
-    s.push(`<circle class="body" r="${m(0.08)}"/>`);
-    s.push(`<circle class="halo" r="${m(0.2)+4}"/>`);}
+  if(t==='vaso')flowerVaseSvg(s,el);
 
   if(t==='mesaripada'||t==='mesaripadaP'){
     const d=dimsFor(el),w=m(d.length),h=m(d.width);
@@ -1129,10 +1140,7 @@ function svgFor(el){
     s.push(`<circle r="${m(0.13)}" fill="${col}" stroke="#6f6a5c" stroke-width=".8"/>`);
     s.push(`<circle r="${m(0.06)}" fill="none" stroke="#6f6a5c" stroke-width=".5" opacity=".6"/>`);
     s.push(`<circle class="halo" r="${m(0.13)+4}"/>`);}
-  if(t==='vasotorre'){const pal=florPal(el);
-    for(let i=0;i<8;i++){const a=i*Math.PI/4;s.push(`<circle fill="${pal[i%3]}" stroke="#8a6d34" stroke-width=".5" r="${m(0.08)}" cx="${Math.cos(a)*m(0.18)}" cy="${Math.sin(a)*m(0.18)}"/>`);}
-    s.push(`<circle r="${m(0.11)}" fill="#eae6da" stroke="#8a6d34" stroke-width=".8"/>`);
-    s.push(`<circle class="halo" r="${m(0.3)+4}"/>`);}
+  if(t==='vasotorre')flowerVaseSvg(s,el);
   if(t==='lampadas'){const n=+getOpt(el,'n','5');
     s.push(`<circle class="toalha" r="${m(0.5)}"/>`);
     for(let i=0;i<n;i++){const a=i*Math.PI*2/n;
@@ -1216,6 +1224,11 @@ function rectTableCv(ctx,w,h,n,gap,kind){
   ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,2);ctx.fill();ctx.stroke();
   for(const [x,y,a] of rectChairPositions(w,h,n,gap))chairCv(ctx,x,y,a,kind);
 }
+function flowerVaseCv(ctx,el){
+  const f=flowerCfg(el),cols=flowerColors(el),R=m(f.flowerSize/2),PR=m(f.potSize/2),n=el.type==='vasoP'?5:el.type==='vaso'?8:12;
+  for(let i=0;i<n;i++){const a=i*2.399963,r=R*(.18+.68*((i%5)/4));ctx.fillStyle=cols[i%cols.length];ctx.beginPath();ctx.arc(Math.cos(a)*r,Math.sin(a)*r,Math.max(m(.025),R*.22),0,7);ctx.fill();ctx.stroke();}
+  ctx.fillStyle='#d9d6c9';ctx.beginPath();ctx.arc(0,0,PR,0,7);ctx.fill();ctx.stroke();
+}
 function drawOnCanvas(ctx, el){
   ctx.save();ctx.translate(el.x,el.y);ctx.rotate(el.rot*Math.PI/180);
   ctx.lineWidth=1.1;ctx.strokeStyle='#8a6d34';ctx.fillStyle='rgba(168,133,63,.18)';
@@ -1232,18 +1245,14 @@ function drawOnCanvas(ctx, el){
     ctx.beginPath();ctx.ellipse(0,-cr-m(0.06),cr*0.85,m(0.05),0,0,7);ctx.fill();ctx.stroke();}
   if(t==='cadeira4'){const cr=m(0.19);rr(-cr,-cr,cr*2,cr*2,cr*0.25);
     ctx.fillStyle='rgba(138,109,52,.6)';rr(-cr,-cr-m(0.07),cr*2,m(0.09),m(0.03));}
-  if(t==='vasoP'){ctx.fillStyle='rgba(168,133,63,.38)';
-    ctx.beginPath();ctx.arc(0,0,m(0.06),0,7);ctx.fill();ctx.stroke();}
-  if(t==='vasoG'){ctx.fillStyle='rgba(168,133,63,.38)';
-    for(let i=0;i<8;i++){const a=i*Math.PI/4;
-      ctx.beginPath();ctx.arc(Math.cos(a)*m(0.22),Math.sin(a)*m(0.22),m(0.09),0,7);ctx.fill();ctx.stroke();}}
+  if(t==='vasoP'||t==='vasoG')flowerVaseCv(ctx,el);
   if(t==='cerejeira'){
-    const tr=el.tree||{height:3.2,pot:.65,trunk:2.1,canopy:2.8},R=m(tr.canopy/2),pot=m(tr.pot/2);
-    ctx.fillStyle='#886451';ctx.beginPath();ctx.arc(0,0,pot,0,7);ctx.fill();ctx.stroke();
+    const tr=treeCfg(el),R=m(tr.canopy/2),pot=m(tr.pot/2);
+    ctx.fillStyle='#886451';ctx.beginPath();tr.potShape==='square'?ctx.roundRect(-pot,-pot,pot*2,pot*2,m(.04)):ctx.arc(0,0,pot,0,7);ctx.fill();ctx.stroke();
     ctx.strokeStyle='#75503e';ctx.lineWidth=m(.035);
     for(let i=0;i<12;i++){const a=i*Math.PI*2/12,r=R*(.46+(i%3)*.16);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);ctx.stroke();}
-    const pink=['#f5d7df','#efbccb','#e8a9bb','#f8e4e9'];
-    for(let i=0;i<24;i++){const a=i*2.399963,r=R*(.25+.68*((i%7)/6));ctx.fillStyle=pink[i%pink.length];ctx.beginPath();ctx.arc(Math.cos(a)*r,Math.sin(a)*r,m(.12+(i%3)*.025),0,7);ctx.fill();ctx.stroke();}}
+    if(tr.model==='blossom'){const pink=['#f5d7df','#efbccb','#e8a9bb','#f8e4e9'];for(let i=0;i<24;i++){const a=i*2.399963,r=R*(.25+.68*((i%7)/6));ctx.fillStyle=pink[i%pink.length];ctx.beginPath();ctx.arc(Math.cos(a)*r,Math.sin(a)*r,m(.12+(i%3)*.025),0,7);ctx.fill();ctx.stroke();}}
+    if(tr.model==='foliage'){ctx.fillStyle='#82926c';ctx.beginPath();ctx.arc(0,0,R*.86,0,7);ctx.fill();ctx.stroke();}}
   if(t==='arco'){ctx.fillStyle='rgba(168,133,63,.5)';
     for(const sx of [-1,1]){ctx.beginPath();ctx.arc(sx*m(1.0),0,m(0.16),0,7);ctx.fill();ctx.stroke();}
     ctx.save();ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(-m(1.0),0);ctx.lineTo(m(1.0),0);ctx.stroke();ctx.restore();}
@@ -1291,9 +1300,7 @@ function drawOnCanvas(ctx, el){
       ctx.beginPath();ctx.arc(Math.cos(a)*R*0.6,Math.sin(a)*R*0.6,m(0.035),0,7);ctx.fill();}}
   if(t==='vasoceramica'){ctx.fillStyle=CERCOR[getOpt(el,'cor','celadon')];ctx.strokeStyle='#6f6a5c';
     ctx.beginPath();ctx.arc(0,0,m(0.13),0,7);ctx.fill();ctx.stroke();ctx.strokeStyle='#8a6d34';}
-  if(t==='vasotorre'){const pal=florPal(el);ctx.fillStyle=pal[0];
-    for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.fillStyle=pal[i%3];
-      ctx.beginPath();ctx.arc(Math.cos(a)*m(0.18),Math.sin(a)*m(0.18),m(0.08),0,7);ctx.fill();ctx.stroke();}}
+  if(t==='vasotorre')flowerVaseCv(ctx,el);
   if(t==='lampadas'){const n=+getOpt(el,'n','5');ctx.fillStyle='#f2d488';
     for(let i=0;i<n;i++){const a=i*Math.PI*2/n;
       ctx.beginPath();ctx.arc(Math.cos(a)*m(0.32),Math.sin(a)*m(0.32),m(0.05),0,7);ctx.fill();ctx.stroke();}}
@@ -1315,10 +1322,7 @@ function drawOnCanvas(ctx, el){
   if(t==='bolo3'){ctx.beginPath();ctx.arc(0,0,m(0.25),0,7);ctx.fill();ctx.stroke();
     ctx.fillStyle='rgba(168,133,63,.32)';ctx.beginPath();ctx.arc(0,0,m(0.17),0,7);ctx.fill();ctx.stroke();
     ctx.fillStyle='rgba(168,133,63,.5)';ctx.beginPath();ctx.arc(0,0,m(0.10),0,7);ctx.fill();ctx.stroke();}
-  if(t==='vaso'){ctx.fillStyle='rgba(168,133,63,.38)';
-    for(let i=0;i<6;i++){const a=i*Math.PI/3;
-      ctx.beginPath();ctx.arc(Math.cos(a)*m(0.12),Math.sin(a)*m(0.12),m(0.055),0,7);ctx.fill();ctx.stroke();}
-    ctx.fillStyle='rgba(168,133,63,.18)';ctx.beginPath();ctx.arc(0,0,m(0.08),0,7);ctx.fill();ctx.stroke();}
+  if(t==='vaso')flowerVaseCv(ctx,el);
   if(t==='pendente'){ctx.save();ctx.setLineDash([3,3]);
     ctx.beginPath();ctx.arc(0,0,m(0.38),0,7);ctx.stroke();ctx.restore();
     ctx.fillStyle='rgba(168,133,63,.38)';
@@ -1559,42 +1563,53 @@ function florzinhas(cx,cy,z,r,n,C,cores){
     out+=`<circle cx="${cx+Math.cos(a)*e.rx}" cy="${cy-z*VZ()+Math.sin(a)*e.ry}" r="${m(0.055)}" fill="${cores[i%cores.length]}" stroke="${C.tr}" stroke-width=".4"/>`;}
   return out;
 }
+function flowerVaseIso(el,C){
+  const f=flowerCfg(el),cols=flowerColors(el),z=decorZ(el),PR=m(f.potSize/2),FR=m(f.flowerSize/2),top=z+f.height;
+  let out='';if(!z)out+=sombra(0,0,Math.max(PR,FR),C);
+  out+=cil(0,0,PR,f.potHeight,z,'#e5e2d7',isoFinish==='real'?'url(#gSide)':'#c9c2af',C);
+  const stemTop=Math.max(z+f.potHeight+.04,top-.06),stemH=Math.max(.05,stemTop-(z+f.potHeight));
+  out+=cil(0,0,m(.018),stemH,z+f.potHeight,'#789064','#5d704e',C);
+  const e=ER(FR);out+=`<ellipse cx="0" cy="${-(top-.08)*VZ()}" rx="${e.rx}" ry="${e.ry*1.35}" fill="${C.verde}" stroke="${C.tr}" stroke-width=".5" opacity=".78"/>`;
+  out+=florzinhas(0,0,top,FR*.76,el.type==='vasoP'?5:el.type==='vaso'?8:12,C,cols);
+  return out;
+}
 function isoSpriteFor(el){
   const C=isoCores(), t=el.type, s=[];
   const halo=(r)=>{const e=ER(r);s.push(`<ellipse class="halo" rx="${e.rx}" ry="${e.ry}"/>`);};
   const depth=(pos)=>{const sorted=[...pos].sort((u,v)=>P(el,u[0],u[1]).y-P(el,v[0],v[1]).y);return [sorted.filter(p=>P(el,p[0],p[1]).y<0),sorted.filter(p=>P(el,p[0],p[1]).y>=0)];};
+  const rectDepth=(pos,hw,hh)=>{const sorted=[...pos].sort((u,v)=>P(el,u[0],u[1]).y-P(el,v[0],v[1]).y),delta=p=>{const ex=Math.max(-hw,Math.min(hw,p[0])),ey=Math.max(-hh,Math.min(hh,p[1]));return P(el,p[0],p[1]).y-P(el,ex,ey).y;};return [sorted.filter(p=>delta(p)<0),sorted.filter(p=>delta(p)>=0)];};
   if(t==='mesa8'||t==='redonda'){
     const d=dimsFor(el),R=roundRadius(el),H=d.height;s.push(sombra(0,0,R+m(.1),C));
     if(t==='mesa8'){const o=R+m(0.32), n=+getOpt(el,'seats','10'), kd=getOpt(el,'chair','encosto');
-      const pos=[];for(let i=0;i<n;i++){const a=i*2*Math.PI/n;pos.push([Math.cos(a)*o,Math.sin(a)*o]);}
+      const pos=[];for(let i=0;i<n;i++){const a=i*2*Math.PI/n;pos.push([Math.cos(a)*o,Math.sin(a)*o,a*180/Math.PI+90]);}
       const [atras,frente]=depth(pos);
-      for(const [lx,ly] of atras)s.push(cadeiraIso(el,lx,ly,C,kd));
+      for(const [lx,ly,a] of atras)s.push(cadeiraIso(el,lx,ly,C,kd,a));
       s.push(cil(0,0,m(0.07),Math.max(.2,H-.06),0,C.madeiraT,C.madeiraL,C));
       if(isoFinish==='real'){
         const e=ER(R*1.08),yT=-Math.max(.2,H-.06)*VZ();
         s.push(`<path d="M ${-e.rx} ${yT} q ${e.rx*0.2} ${0.42*VZ()} 0 ${0.46*VZ()} q ${e.rx*0.5} ${m(0.05)} ${e.rx} 0 q ${e.rx*0.28} ${-0.06*VZ()} ${e.rx*0.55} ${-0.13*VZ()} L ${e.rx} ${yT} A ${e.rx} ${e.ry} 0 0 0 ${-e.rx} ${yT} Z" fill="${C.branco}" stroke="${C.tr}" stroke-width=".7" opacity=".97"/>`);
         s.push(`<ellipse cx="0" cy="${yT-0.02*VZ()}" rx="${e.rx}" ry="${e.ry}" fill="${C.topo}" stroke="${C.tr}" stroke-width="${C.sw}"/>`);
       } else s.push(cil(0,0,R,0.06,Math.max(.2,H-.06),C.topo,C.lado,C));
-      for(const [lx,ly] of frente)s.push(cadeiraIso(el,lx,ly,C,kd));
+      for(const [lx,ly,a] of frente)s.push(cadeiraIso(el,lx,ly,C,kd,a));
     } else s.push(cil(0,0,m(0.07),Math.max(.2,H-.06),0,C.madeiraT,C.madeiraL,C),cil(0,0,R,0.06,Math.max(.2,H-.06),C.topo,C.lado,C));
     halo(R+m(.4));
   }
   if(t==='mesa4'){
     const d=dimsFor(el),R=roundRadius(el),H=d.height;s.push(sombra(0,0,R+m(.1),C));
     const o=R+m(0.32), pos=[],n=+getOpt(el,'seats','10');
-    for(let i=0;i<n;i++){const a=i*2*Math.PI/n+Math.PI/4;pos.push([Math.cos(a)*o,Math.sin(a)*o]);}
+    for(let i=0;i<n;i++){const a=i*2*Math.PI/n+Math.PI/4;pos.push([Math.cos(a)*o,Math.sin(a)*o,a*180/Math.PI+90]);}
     const kd4=getOpt(el,'chair','encosto');
-    const [atras4,frente4]=depth(pos);for(const [lx,ly] of atras4)s.push(cadeiraIso(el,lx,ly,C,kd4));
+    const [atras4,frente4]=depth(pos);for(const [lx,ly,a] of atras4)s.push(cadeiraIso(el,lx,ly,C,kd4,a));
     s.push(cil(0,0,m(0.07),Math.max(.2,H-.06),0,C.madeiraT,C.madeiraL,C));
     s.push(cil(0,0,R,0.06,Math.max(.2,H-.06),C.topo,C.lado,C));
-    for(const [lx,ly] of frente4)s.push(cadeiraIso(el,lx,ly,C,kd4));
+    for(const [lx,ly,a] of frente4)s.push(cadeiraIso(el,lx,ly,C,kd4,a));
     halo(R+m(.4));
   }
   if(t==='mesaq4'){
     const d=dimsFor(el),len=d.length,wid=d.width,H=d.height,hw=len/2,hh=wid/2;s.push(sombra(0,0,m(Math.max(len,wid)/2+.2),C));
     const n=getOpt(el,'chairs','yes')==='no'?0:+getOpt(el,'seats','10');
     const cadPos=italianChairPositions(m(len),m(wid),n,m(.28));
-    const [atrasQ,frenteQ]=depth(cadPos);
+    const [atrasQ,frenteQ]=rectDepth(cadPos,m(hw),m(hh));
     const pernas=[[-hw+0.08,-hh+0.08],[hw-0.08,-hh+0.08],[-hw+0.08,hh-0.08],[hw-0.08,hh-0.08]]
       .map(([x,y])=>[m(x),m(y)]).sort((u,v)=>(u[0]+u[1])-(v[0]+v[1]));
     const kdq=getOpt(el,'chair','encosto');
@@ -1609,11 +1624,11 @@ function isoSpriteFor(el){
     const c=el.custom||{shape:'rect',length:2,width:1,height:.75,chairs:true,seats:10};
     const len=+c.length||2,wid=+c.width||1,h=+c.height||.75,n=c.chairs===false?0:+(c.seats||10),pos=[];
     if(c.shape==='round'){
-      const R=m(Math.max(len,wid)/2),o=R+m(.32);for(let i=0;i<n;i++){const a=i*2*Math.PI/n;pos.push([Math.cos(a)*o,Math.sin(a)*o]);}
+      const R=m(Math.max(len,wid)/2),o=R+m(.32);for(let i=0;i<n;i++){const a=i*2*Math.PI/n;pos.push([Math.cos(a)*o,Math.sin(a)*o,a*180/Math.PI+90]);}
     }else for(const [x,y] of rectChairPositions(m(len),m(wid),n,m(.32)))pos.push([x,y]);
-    const [atrasC,frenteC]=depth(pos);
+    const [atrasC,frenteC]=c.shape==='round'?depth(pos):rectDepth(pos,m(len/2),m(wid/2));
     s.push(sombra(0,0,m(Math.max(len,wid)/2+.3),C));
-    for(const [x,y] of atrasC)s.push(cadeiraIso(el,x,y,C,getOpt(el,'chair','encosto')));
+    for(const [x,y,a] of atrasC)s.push(cadeiraIso(el,x,y,C,getOpt(el,'chair','encosto'),a));
     if(c.shape==='round'){
       s.push(cil(0,0,m(.07),Math.max(.2,h-.06),0,C.madeiraT,C.madeiraL,C));
       s.push(cil(0,0,m(Math.max(len,wid)/2),.06,Math.max(.2,h-.06),C.topo,C.lado,C));
@@ -1621,7 +1636,7 @@ function isoSpriteFor(el){
       const lx=len/2-.08,ly=wid/2-.08;for(const [x,y] of [[-lx,-ly],[lx,-ly],[-lx,ly],[lx,ly]]){const q=P(el,m(x),m(y));s.push(cil(q.x,q.y,m(.03),Math.max(.2,h-.06),0,C.madeiraT,C.madeiraL,C));}
       s.push(caixa(el,0,0,m(len/2),m(wid/2),0,.06,Math.max(.2,h-.06),C.topo,C.lado,C));
     }
-    for(const [x,y] of frenteC)s.push(cadeiraIso(el,x,y,C,getOpt(el,'chair','encosto')));
+    for(const [x,y,a] of frenteC)s.push(cadeiraIso(el,x,y,C,getOpt(el,'chair','encosto'),a));
     halo(m(Math.max(len,wid)/2+.65));
   }
   if(t==='luis16'){
@@ -1649,26 +1664,11 @@ function isoSpriteFor(el){
     s.push(caixa(el,0,-m(0.17),m(0.19),m(0.022),0,0.46,0.49,C.madeiraT,C.madeiraL,C));
     halo(m(0.42));
   }
-  if(t==='vasoP'){
-    const z=decorZ(el);
-    s.push(cil(0,0,m(0.04),0.12,z,'#cdd6c4',isoFinish==='real'?'url(#gVerde)':'#9aa88b',C));
-    s.push(florzinhas(0,0,z+0.18,m(0.06),3,C,florPal(el)));
-    halo(m(0.16));
-  }
-  if(t==='vasoG'){
-    const z=decorZ(el);
-    if(!z)s.push(sombra(0,0,m(0.32),C));
-    s.push(cil(0,0,m(0.13),0.5,z,'#cdd6c4',isoFinish==='real'?'url(#gVerde)':'#9aa88b',C));
-    const e=ER(m(0.28));
-    s.push(`<ellipse cx="0" cy="${-(z+0.72)*VZ()}" rx="${e.rx}" ry="${e.ry*1.5}" fill="${C.verde}" stroke="${C.tr}" stroke-width=".6" opacity=".92"/>`);
-    s.push(florzinhas(0,0,z+0.78,m(0.2),7,C,florPal(el)));
-    s.push(florzinhas(0,0,z+0.6,m(0.26),6,C,florPal(el)));
-    halo(m(0.45));
-  }
+  if(t==='vasoP'||t==='vasoG'){s.push(flowerVaseIso(el,C));const f=flowerCfg(el);halo(m(Math.max(f.potSize,f.flowerSize)/2+.12));}
   if(t==='cerejeira'){
-    const tr=el.tree||{height:3.2,pot:.65,trunk:2.1,canopy:2.8},H=+tr.height||3.2,TH=Math.min(H-.35,+tr.trunk||2.1),R=m((+tr.canopy||2.8)/2),PR=m((+tr.pot||.65)/2);
+    const tr=treeCfg(el),H=+tr.height||3.2,TH=Math.min(H-.35,+tr.trunk||2.1),R=m((+tr.canopy||2.8)/2),PR=m((+tr.pot||.65)/2);
     s.push(sombra(0,0,R*.82,C));
-    s.push(cil(0,0,PR,.52,0,'#a47a62','#72503f',C));
+    s.push(tr.potShape==='square'?caixa(el,0,0,PR,PR,0,.52,0,'#a47a62','#72503f',C):cil(0,0,PR,.52,0,'#a47a62','#72503f',C));
     s.push(cil(0,0,m(.09),Math.max(.5,TH-.18),.42,'#8a634b','#634433',C));
     const pink=['#f8e4e9','#f2c7d2','#e9aebe','#f6d6de'],clusters=[];
     for(let i=0;i<22;i++){
@@ -1680,7 +1680,10 @@ function isoSpriteFor(el){
       const a=i*Math.PI*2/12,rad=R*(.55+(i%3)*.17),q=P(el,Math.cos(a)*rad,Math.sin(a)*rad),base=P(el,0,0);
       s.push(`<path d="M ${base.x} ${base.y-TH*VZ()} Q ${q.x*.5} ${base.y-(TH+.38)*VZ()} ${q.x} ${q.y-(TH+.18)*VZ()}" fill="none" stroke="#75503e" stroke-width="${m(.055)}" stroke-linecap="round"/>`);}
     clusters.sort((a,b)=>(a.q.y-a.z*VZ())-(b.q.y-b.z*VZ()));
-    for(const c of clusters)s.push(`<circle cx="${c.q.x}" cy="${c.q.y-c.z*VZ()}" r="${m(.16+(c.i%3)*.035)}" fill="${pink[c.i%pink.length]}" stroke="#b98392" stroke-width=".5" opacity=".96"/>`);
+    if(tr.model==='blossom')for(const c of clusters)s.push(`<circle cx="${c.q.x}" cy="${c.q.y-c.z*VZ()}" r="${m(.16+(c.i%3)*.035)}" fill="${pink[c.i%pink.length]}" stroke="#b98392" stroke-width=".5" opacity=".96"/>`);
+    if(tr.model==='foliage'){
+      const e=ER(R);s.push(`<ellipse cx="0" cy="${-(TH+(H-TH)*.56)*VZ()}" rx="${e.rx}" ry="${e.ry*1.55}" fill="#71845e" stroke="#526447" stroke-width="1" opacity=".92"/>`);
+      for(let i=0;i<8;i++){const a=i*Math.PI*2/8,q=P(el,Math.cos(a)*R*.55,Math.sin(a)*R*.55);s.push(`<circle cx="${q.x}" cy="${q.y-(TH+(H-TH)*(.45+i%2*.18))*VZ()}" r="${R*.27}" fill="${i%2?'#9ead86':'#7f936b'}" opacity=".9"/>`);}}
     halo(R+m(.2));
   }
   if(t==='arco'){
@@ -1859,16 +1862,7 @@ function isoSpriteFor(el){
     s.push(`<ellipse cx="${-e.rx*0.3}" cy="${-zT*0.55}" rx="${e.rx*0.28}" ry="${zT*0.32}" fill="#fff" opacity=".14"/></g>`);
     halo(m(0.28));
   }
-  if(t==='vasotorre'){
-    const pal=florPal(el), z=decorZ(el);
-    if(!z)s.push(sombra(0,0,m(0.2),C));
-    s.push(cil(0,0,m(0.11),0.62,z,'#eae6da',isoFinish==='real'?'url(#gSide)':'#d8ccae',C));  /* vaso branco alto */
-    const e=ER(m(0.26));
-    s.push(`<ellipse cx="0" cy="${-(z+0.82)*VZ()}" rx="${e.rx}" ry="${e.ry*1.4}" fill="${C.verde}" stroke="${C.tr}" stroke-width=".6" opacity=".92"/>`);
-    s.push(florzinhas(0,0,z+0.88,m(0.2),8,C,pal));
-    s.push(florzinhas(0,0,z+0.72,m(0.24),7,C,pal));
-    halo(m(0.42));
-  }
+  if(t==='vasotorre'){s.push(flowerVaseIso(el,C));const f=flowerCfg(el);halo(m(Math.max(f.potSize,f.flowerSize)/2+.12));}
   if(t==='lampadas'){
     const n=+getOpt(el,'n','5');
     for(let i=0;i<n;i++){const a=i*Math.PI*2/n, rr2=m(0.32);
@@ -1930,12 +1924,7 @@ function isoSpriteFor(el){
     s.push(cil(0,0,m(0.10),0.11,z+0.25,C.branco,'#e8dcc2',C));
     s.push(`<circle cx="0" cy="${-(z+0.4)*VZ()}" r="${m(0.035)}" fill="${C.rosa}" stroke="${C.tr}" stroke-width=".4"/>`);
     halo(m(0.4));}
-  if(t==='vaso'){
-    const z=decorZ(el);
-    s.push(cil(0,0,m(0.07),0.2,z,'#cdd6c4',isoFinish==='real'?'url(#gVerde)':'#9aa88b',C));
-    s.push(florzinhas(0,0,z+0.3,m(0.11),6,C,florPal(el)));
-    s.push(`<circle cx="0" cy="${-(z+0.34)*VZ()}" r="${m(0.05)}" fill="${C.rosa}" stroke="${C.tr}" stroke-width=".4"/>`);
-    halo(m(0.3));}
+  if(t==='vaso'){s.push(flowerVaseIso(el,C));const f=flowerCfg(el);halo(m(Math.max(f.potSize,f.flowerSize)/2+.12));}
   if(t==='pendente'){
     const z=ZB.pendente;
     s.push(sombra(0,0,m(0.34),C));
@@ -2131,9 +2120,20 @@ function updateSelPanel(){
     box.innerHTML=`<div class="opt-row"><span class="lab">Nome do indicador</span></div><div class="custom-dim" style="grid-template-columns:1fr"><label>Texto<input type="text" maxlength="48" data-pin-text value="${escText(one.text||'Novo local')}"></label></div>`;
     return;
   }
+  if(one&&FLOWER_TYPES.has(one.type)){
+    const f=flowerCfg(one),support=getOpt(one,'suporte','mesa');
+    box.innerHTML=`<div class="opt-row"><span class="lab">Posição</span><div class="seg"><button class="btn${support==='mesa'?' on':''}" data-k="suporte" data-v="mesa">Sobre mesa</button><button class="btn${support==='chao'?' on':''}" data-k="suporte" data-v="chao">No chão</button></div></div>
+      <div class="opt-row"><span class="lab">Dimensões do arranjo</span></div><div class="custom-dim"><label>Altura total (m)<input type="number" min=".15" max="4" step=".05" data-flower="height" value="${f.height}"></label><label>Diâmetro do vaso (m)<input type="number" min=".05" max="2" step=".05" data-flower="potSize" value="${f.potSize}"></label><label>Altura do vaso (m)<input type="number" min=".05" max="2.5" step=".05" data-flower="potHeight" value="${f.potHeight}"></label><label>Diâmetro das flores (m)<input type="number" min=".08" max="3" step=".05" data-flower="flowerSize" value="${f.flowerSize}"></label></div>
+      <div class="opt-row"><span class="lab">Cores das flores</span><div class="seg"><button class="btn${f.mixed==='no'?' on':''}" data-flower-mixed="no">Uma cor</button><button class="btn${f.mixed!=='no'?' on':''}" data-flower-mixed="yes">Mesclado</button></div></div>
+      <div class="opt-row"><span class="lab">Combinações</span><div class="seg"><button class="btn" data-flower-preset="white">Brancas</button><button class="btn" data-flower-preset="green">Verdes</button><button class="btn" data-flower-preset="whitegreen">Branco + verde</button><button class="btn" data-flower-preset="pinkwhite">Rosa + branco</button></div></div>
+      <div class="custom-dim"><label>Cor principal<input type="color" data-flower="color1" value="${f.color1}"></label>${f.mixed==='no'?'':`<label>Cor secundária<input type="color" data-flower="color2" value="${f.color2}"></label>`}</div>`;
+    return;
+  }
   if(one&&one.type==='cerejeira'){
-    const tr=one.tree||(one.tree={height:3.2,pot:.65,trunk:2.1,canopy:2.8});
-    box.innerHTML=`<div class="opt-row"><span class="lab">Dimensões da cerejeira</span></div><div class="custom-dim"><label>Altura total (m)<input type="number" min="1.8" max="6" step=".1" data-tree="height" value="${tr.height}"></label><label>Vaso/base (m)<input type="number" min=".3" max="1.5" step=".05" data-tree="pot" value="${tr.pot}"></label><label>Altura do tronco (m)<input type="number" min="1" max="4.8" step=".1" data-tree="trunk" value="${tr.trunk}"></label><label>Diâmetro da cúpula (m)<input type="number" min="1.5" max="6" step=".1" data-tree="canopy" value="${tr.canopy}"></label></div>`;
+    const tr=treeCfg(one);one.tree={...tr};
+    box.innerHTML=`<div class="opt-row"><span class="lab">Modelo da copa</span><div class="seg"><button class="btn${tr.model==='blossom'?' on':''}" data-tree-model="blossom">Cerejeira</button><button class="btn${tr.model==='branches'?' on':''}" data-tree-model="branches">Só galhos</button><button class="btn${tr.model==='foliage'?' on':''}" data-tree-model="foliage">Cúpula verde</button></div></div>
+      <div class="opt-row"><span class="lab">Formato do vaso</span><div class="seg"><button class="btn${tr.potShape==='round'?' on':''}" data-tree-pot="round">Circular</button><button class="btn${tr.potShape==='square'?' on':''}" data-tree-pot="square">Quadrado</button></div></div>
+      <div class="opt-row"><span class="lab">Dimensões da cerejeira</span></div><div class="custom-dim"><label>Altura total (m)<input type="number" min="1.8" max="6" step=".1" data-tree="height" value="${tr.height}"></label><label>Tamanho do vaso (m)<input type="number" min=".3" max="2" step=".05" data-tree="pot" value="${tr.pot}"></label><label>Altura do tronco (m)<input type="number" min="1" max="4.8" step=".1" data-tree="trunk" value="${tr.trunk}"></label><label>Diâmetro da cúpula (m)<input type="number" min="1.5" max="6" step=".1" data-tree="canopy" value="${tr.canopy}"></label></div>`;
     return;
   }
   if(one&&one.type==='puffRect'){
@@ -2155,6 +2155,10 @@ function updateSelPanel(){
 }
 document.getElementById('optRows').addEventListener('click',e=>{
   const one=sel.size===1?selEls()[0]:null;if(!one)return;
+  const treeModel=e.target.closest('[data-tree-model]');if(treeModel&&one.type==='cerejeira'){one.tree={...treeCfg(one),model:treeModel.dataset.treeModel};render();return;}
+  const treePot=e.target.closest('[data-tree-pot]');if(treePot&&one.type==='cerejeira'){one.tree={...treeCfg(one),potShape:treePot.dataset.treePot};render();return;}
+  const flowerMixed=e.target.closest('[data-flower-mixed]');if(flowerMixed&&FLOWER_TYPES.has(one.type)){one.flower={...flowerCfg(one),mixed:flowerMixed.dataset.flowerMixed};render();return;}
+  const flowerPreset=e.target.closest('[data-flower-preset]');if(flowerPreset&&FLOWER_TYPES.has(one.type)){const presets={white:['#f7f5ed','#f7f5ed','no'],green:['#839873','#839873','no'],whitegreen:['#f7f5ed','#839873','yes'],pinkwhite:['#e9b5c2','#f7f5ed','yes']},p=presets[flowerPreset.dataset.flowerPreset];one.flower={...flowerCfg(one),color1:p[0],color2:p[1],mixed:p[2]};render();return;}
   const puffBack=e.target.closest('[data-puff-back]');if(puffBack){one.puff=one.puff||{};one.puff.back=puffBack.dataset.puffBack==='yes';render();return;}
   const shape=e.target.closest('[data-custom-shape]');if(shape){one.custom.shape=shape.dataset.customShape;render();return;}
   const chairs=e.target.closest('[data-custom-chairs]');if(chairs){one.custom.chairs=chairs.dataset.customChairs==='yes';render();return;}
@@ -2170,10 +2174,17 @@ document.getElementById('optRows').addEventListener('change',e=>{
   if(dim&&EDITABLE_DIMS.has(one.type)){one.dimensions=one.dimensions||{};one.dimensions[dim.dataset.dim]=Math.max(.2,+dim.value||.2);render();return;}
   const tree=e.target.closest('input[data-tree]');
   if(tree&&one.type==='cerejeira'){
-    one.tree=one.tree||{height:3.2,pot:.65,trunk:2.1,canopy:2.8};
-    const limits={height:[1.8,6],pot:[.3,1.5],trunk:[1,4.8],canopy:[1.5,6]},[min,max]=limits[tree.dataset.tree];
+    one.tree={...treeCfg(one)};
+    const limits={height:[1.8,6],pot:[.3,2],trunk:[1,4.8],canopy:[1.5,6]},[min,max]=limits[tree.dataset.tree];
     one.tree[tree.dataset.tree]=Math.min(max,Math.max(min,+tree.value||min));
     if(one.tree.trunk>one.tree.height-.35)one.tree.trunk=Math.max(1,one.tree.height-.35);
+    render();return;
+  }
+  const flower=e.target.closest('input[data-flower]');
+  if(flower&&FLOWER_TYPES.has(one.type)){
+    one.flower={...flowerCfg(one)};
+    if(flower.type==='color')one.flower[flower.dataset.flower]=flower.value;
+    else{const limits={height:[.15,4],potSize:[.05,2],potHeight:[.05,2.5],flowerSize:[.08,3]},[min,max]=limits[flower.dataset.flower];one.flower[flower.dataset.flower]=Math.min(max,Math.max(min,+flower.value||min));if(one.flower.height<one.flower.potHeight+.05)one.flower.height=one.flower.potHeight+.05;}
     render();return;
   }
   const puff=e.target.closest('input[data-puff]');
@@ -2273,7 +2284,8 @@ board.addEventListener('pointerdown',e=>{
     if(placing==='passarela')el.len=3;
     if(placing==='trilhavelas')el.len=2.5;
     if(placing==='namePin')el.text='Novo local';
-    if(placing==='cerejeira')el.tree={height:3.2,pot:.65,trunk:2.1,canopy:2.8};
+    if(placing==='cerejeira')el.tree={height:3.2,pot:.65,trunk:2.1,canopy:2.8,model:'blossom',potShape:'round'};
+    if(FLOWER_TYPES.has(placing))el.flower={...flowerCfg(el)};
     els.push(el);sel=new Set([el.id]);
     if(!e.shiftKey)cancelPlacing();
     render();return;
@@ -2371,7 +2383,7 @@ function rot(d){if(!sel.size)return;const items=selEls();
 function dup(){if(!sel.size)return;const novos=[];
   const groupMap=new Map();
   for(const el of selEls()){let gid=el.groupId;if(gid!=null){if(!groupMap.has(gid))groupMap.set(gid,nextGroup++);gid=groupMap.get(gid);}
-    const c={...el,id:nextId++,x:el.x+m(0.6),y:el.y+m(0.6),groupId:gid,opts:el.opts?{...el.opts}:undefined,dimensions:el.dimensions?{...el.dimensions}:undefined,puff:el.puff?{...el.puff}:undefined,tree:el.tree?{...el.tree}:undefined};els.push(c);novos.push(c.id);}
+    const c={...el,id:nextId++,x:el.x+m(0.6),y:el.y+m(0.6),groupId:gid,opts:el.opts?{...el.opts}:undefined,dimensions:el.dimensions?{...el.dimensions}:undefined,puff:el.puff?{...el.puff}:undefined,tree:el.tree?{...el.tree}:undefined,flower:el.flower?{...el.flower}:undefined};els.push(c);novos.push(c.id);}
   sel=new Set(novos);render();}
 function groupSelected(){if(sel.size<2)return;const gid=nextGroup++;for(const el of selEls())el.groupId=gid;render();toast('Elementos agrupados');}
 function ungroupSelected(){if(!sel.size)return;const gids=new Set(selEls().map(x=>x.groupId).filter(x=>x!=null));for(const el of els)if(gids.has(el.groupId))delete el.groupId;render();toast('Grupo desfeito');}
@@ -2698,7 +2710,7 @@ function stampFoot(){
     if(EDITABLE_DIMS.has(t)){const d=dimsFor(el);if(['mesa8','mesa4','bistro','redonda','bolo'].includes(t))circ=m(Math.max(d.length,d.width)/2)+folga;else rect=[m(d.length/2)+folga,m(d.width/2)+folga];}
     if(t==='customTable'){const c=el.custom||{},len=+c.length||2,wid=+c.width||1;
       if(c.shape==='round')circ=m(Math.max(len,wid)/2)+folga;else rect=[m(len/2)+folga,m(wid/2)+folga];}
-    if(t==='vasoG')circ=m(0.28);
+    if(FLOWER_TYPES.has(t)){const f=flowerCfg(el);circ=m(Math.max(f.potSize,f.flowerSize)/2);}
     if(t==='cerejeira'){const tr=el.tree||{pot:.65};circ=m((+tr.pot||.65)/2);}
     if(t==='painel')rect=[m(1.0)+folga,m(0.15)+folga];
     if(t==='puffRect'){const p=el.puff||{length:1.2,width:.55};rect=[m(p.length/2)+folga,m(p.width/2)+folga];}
@@ -3085,7 +3097,8 @@ function farFromPlaced(x,y,need){
     const editableSize=EDITABLE_DIMS.has(e.type)?Math.max(dimsFor(e).length,dimsFor(e).width)/2+.45:null;
     const puffSize=e.type==='puffRect'?Math.max(+(e.puff&&e.puff.length)||1.2,+(e.puff&&e.puff.width)||.55)/2+.25:null;
     const treeSize=e.type==='cerejeira'?((+(e.tree&&e.tree.canopy)||2.8)/2+.2):null;
-    const f=(customSize||editableSize||puffSize||treeSize||FOOT[e.type]||1)*PT_PER_M*scaleAdj;
+    const flowerSize=FLOWER_TYPES.has(e.type)?Math.max(flowerCfg(e).potSize,flowerCfg(e).flowerSize)/2+.12:null;
+    const f=(customSize||editableSize||puffSize||treeSize||flowerSize||FOOT[e.type]||1)*PT_PER_M*scaleAdj;
     if(Math.hypot(e.x-x,e.y-y)<need+f)return false;
   }
   return true;
